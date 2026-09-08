@@ -98,7 +98,27 @@ Surchargeables par variables d'environnement :
 
 ## GUI
 
-Voir [`gui/README.md`](gui/README.md).
+Application de bureau (Electron + React) qui couvre le meme flux, sur la meme
+arborescence : les deux interfaces peuvent travailler sur la meme racine, dans
+n'importe quel ordre.
+
+```bash
+cd gui
+npm install
+npm run dev        # developpement
+npm run dist       # installateurs Windows / macOS / Linux
+```
+
+Trois ecrans : la liste des dossiers de FQDN triee par urgence (a assembler,
+expire, a renouveler, en attente PKI), le formulaire de demande, et le detail
+d'un FQDN qui enchaine les trois etapes — la CSR, le depot des retours de la
+PKI par glisser-deposer, puis l'assemblage du PFX avec ses controles.
+
+La GUI ne depend pas de bash : la logique des scripts y est portee en
+TypeScript et appelle `openssl` directement. Elle passe aussi les mots de passe
+par l'environnement d'openssl plutot que par sa ligne de commande.
+
+Detail : [`gui/README.md`](gui/README.md).
 
 ---
 
