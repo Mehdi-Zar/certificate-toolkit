@@ -12,9 +12,9 @@ import { fr, type MessageKey } from './fr.ts'
 export type { MessageKey }
 export type Lang = 'fr' | 'en'
 
-export const LANGUAGES: Array<{ value: Lang; label: string }> = [
-  { value: 'fr', label: 'Francais' },
-  { value: 'en', label: 'English' },
+export const LANGUAGES: Array<{ value: Lang; short: string; label: string }> = [
+  { value: 'fr', short: 'FR', label: 'Francais' },
+  { value: 'en', short: 'EN', label: 'English' },
 ]
 
 const TABLES: Record<Lang, Record<MessageKey, string>> = { fr, en }

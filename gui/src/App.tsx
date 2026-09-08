@@ -12,6 +12,7 @@ import { useState } from 'react'
 import type { ReactNode } from 'react'
 import { Onboarding } from './components/Onboarding.tsx'
 import { cx } from './components/ui.tsx'
+import { LANGUAGES, type Lang } from '../shared/i18n/index.ts'
 import { useApp, useT, useTheme, type Theme } from './lib/store.tsx'
 import { CertificatesPage } from './pages/CertificatesPage.tsx'
 import { DetailPage } from './pages/DetailPage.tsx'
@@ -120,6 +121,7 @@ function Sidebar({
           <span className="flex-1 text-left">{t('wizard.reopen')}</span>
         </button>
         <ThemeToggle />
+        <LanguageToggle />
         <OpensslStatus />
       </div>
     </aside>
@@ -184,6 +186,43 @@ function ThemeToggle() {
           )}
         >
           {o.icon}
+        </button>
+      ))}
+    </div>
+  )
+}
+
+/**
+ * La langue se change aussi ici, sous le theme : ce sont deux reglages
+ * d'affichage, et on ne va pas dans les reglages pour basculer FR/EN.
+ */
+function LanguageToggle() {
+  const { settings, updateSettings } = useApp()
+  const t = useT()
+  if (!settings) return null
+
+  const pick = (language: Lang) => {
+    if (language === settings.language) return
+    void updateSettings({ ...settings, language })
+  }
+
+  return (
+    <div className="mb-2 flex gap-0.5 rounded-lg bg-inset p-0.5" role="group" aria-label={t('settings.language')}>
+      {LANGUAGES.map((l) => (
+        <button
+          key={l.value}
+          onClick={() => pick(l.value)}
+          title={l.label}
+          aria-label={l.label}
+          aria-pressed={settings.language === l.value}
+          className={cx(
+            'h-7 flex-1 rounded-md text-[11px] font-semibold tracking-wide transition-colors',
+            settings.language === l.value
+              ? 'bg-surface text-ink shadow-sm'
+              : 'text-subtle hover:text-muted',
+          )}
+        >
+          {l.short}
         </button>
       ))}
     </div>
