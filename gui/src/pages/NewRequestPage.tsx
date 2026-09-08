@@ -132,7 +132,7 @@ function blankRequest(template: Template, settings: Settings | null): CsrRequest
     templateId: template.id,
     subject: {
       commonName: '',
-      country: settings?.defaults.country ?? 'FR',
+      country: settings?.defaults.country ?? '',
       state: settings?.defaults.state ?? '',
       locality: settings?.defaults.locality ?? '',
       org: settings?.defaults.org ?? '',
@@ -542,6 +542,7 @@ function SubjectSection({
           <Input
             id="c"
             maxLength={2}
+            placeholder={t('ph.country')}
             value={s.country}
             onChange={(e) => patch((d) => void (d.subject.country = e.target.value.toUpperCase()))}
           />
@@ -549,6 +550,7 @@ function SubjectSection({
         <Field label={t('field.org')} htmlFor="o" help={t('field.org.help')}>
           <Input
             id="o"
+            placeholder={t('ph.org')}
             value={s.org}
             onChange={(e) => patch((d) => void (d.subject.org = e.target.value))}
           />
@@ -559,7 +561,7 @@ function SubjectSection({
         <StringList
           values={s.ous}
           onChange={(next) => patch((d) => void (d.subject.ous = next))}
-          placeholder="Direction"
+          placeholder={t('ph.ou')}
         />
       </Field>
 
@@ -572,6 +574,7 @@ function SubjectSection({
         <Input
           id="mail"
           type="email"
+          placeholder={t('ph.email')}
           value={s.email}
           onChange={(e) => patch((d) => void (d.subject.email = e.target.value))}
         />
@@ -583,6 +586,7 @@ function SubjectSection({
             <Field label={t('field.state')} htmlFor="st" help={t('field.state.help')}>
               <Input
                 id="st"
+                placeholder={t('ph.state')}
                 value={s.state}
                 onChange={(e) => patch((d) => void (d.subject.state = e.target.value))}
               />
@@ -590,6 +594,7 @@ function SubjectSection({
             <Field label={t('field.locality')} htmlFor="l" help={t('field.locality.help')}>
               <Input
                 id="l"
+                placeholder={t('ph.locality')}
                 value={s.locality}
                 onChange={(e) => patch((d) => void (d.subject.locality = e.target.value))}
               />
@@ -597,6 +602,7 @@ function SubjectSection({
             <Field label={t('field.street')} htmlFor="street" help={t('field.street.help')}>
               <Input
                 id="street"
+                placeholder={t('ph.street')}
                 value={s.street}
                 onChange={(e) => patch((d) => void (d.subject.street = e.target.value))}
               />
@@ -604,6 +610,7 @@ function SubjectSection({
             <Field label={t('field.postalCode')} htmlFor="pc" help={t('field.postalCode.help')}>
               <Input
                 id="pc"
+                placeholder={t('ph.postalCode')}
                 value={s.postalCode}
                 onChange={(e) => patch((d) => void (d.subject.postalCode = e.target.value))}
               />
@@ -614,6 +621,7 @@ function SubjectSection({
             <Field label={t('field.givenName')} htmlFor="gn" help={t('field.givenName.help')}>
               <Input
                 id="gn"
+                placeholder={t('ph.givenName')}
                 value={s.givenName}
                 onChange={(e) => patch((d) => void (d.subject.givenName = e.target.value))}
               />
@@ -621,6 +629,7 @@ function SubjectSection({
             <Field label={t('field.surname')} htmlFor="sn" help={t('field.surname.help')}>
               <Input
                 id="sn"
+                placeholder={t('ph.surname')}
                 value={s.surname}
                 onChange={(e) => patch((d) => void (d.subject.surname = e.target.value))}
               />
@@ -628,6 +637,7 @@ function SubjectSection({
             <Field label={t('field.title')} htmlFor="ti" help={t('field.title.help')}>
               <Input
                 id="ti"
+                placeholder={t('ph.title')}
                 value={s.title}
                 onChange={(e) => patch((d) => void (d.subject.title = e.target.value))}
               />
@@ -635,6 +645,7 @@ function SubjectSection({
             <Field label={t('field.uid')} htmlFor="uid" help={t('field.uid.help')}>
               <Input
                 id="uid"
+                placeholder={t('ph.uid')}
                 value={s.uid}
                 onChange={(e) => patch((d) => void (d.subject.uid = e.target.value))}
               />
@@ -650,6 +661,7 @@ function SubjectSection({
             >
               <Input
                 id="serial"
+                placeholder={t('ph.serialNumber')}
                 value={s.serialNumber}
                 onChange={(e) => patch((d) => void (d.subject.serialNumber = e.target.value))}
               />
@@ -662,6 +674,7 @@ function SubjectSection({
             >
               <Input
                 id="bc"
+                placeholder={t('ph.businessCategory')}
                 value={s.businessCategory}
                 onChange={(e) => patch((d) => void (d.subject.businessCategory = e.target.value))}
               />
@@ -672,7 +685,7 @@ function SubjectSection({
             <StringList
               values={s.domainComponents}
               onChange={(next) => patch((d) => void (d.subject.domainComponents = next))}
-              placeholder="exemple"
+              placeholder={t('ph.dc')}
             />
           </Field>
         </>

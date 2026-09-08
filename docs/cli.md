@@ -37,7 +37,7 @@ des SAN supplémentaires.
 | Option | Effet |
 |---|---|
 | `-a`, `--alt NOM` | SAN supplémentaire, répétable. Accepte `IP:`, `DNS:`, `email:`, `URI:` |
-| `-c`, `--country CODE` | Pays, défaut `FR` |
+| `-c`, `--country CODE` | Pays, vide par défaut |
 | `-o`, `--org NOM` | Organisation |
 | `-u`, `--ou NOM` | Unité |
 | `-e`, `--email ADRESSE` | Email dans le sujet. `""` pour ne pas en mettre |
@@ -97,7 +97,7 @@ cohérence avec la CSR.
 | Variable | Effet |
 |---|---|
 | `CERT_HOME` | Racine de travail |
-| `CERT_COUNTRY` | Pays, défaut `FR` |
+| `CERT_COUNTRY` | Pays |
 | `CERT_ORG` | Organisation |
 | `CERT_OU` | Unité |
 | `CERT_EMAIL` | Email |

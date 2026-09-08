@@ -22,7 +22,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # Valeurs par defaut (surchargeables par options ou par variables d'env)
 # --------------------------------------------------------------------------
 ROOT_DIR="${CERT_HOME:-$SCRIPT_DIR}"
-COUNTRY="${CERT_COUNTRY:-FR}"
+COUNTRY="${CERT_COUNTRY:-}"
 ORG="${CERT_ORG:-}"
 OU="${CERT_OU:-}"
 EMAIL="${CERT_EMAIL:-}"
@@ -45,7 +45,7 @@ Options :
   -a, --alt NOM           SAN supplementaire, repetable. Accepte :
                           "www.exemple.fr"  -> DNS:www.exemple.fr
                           "IP:10.0.0.1", "DNS:x", "email:x", "URI:x"
-  -c, --country CODE      C=   (defaut : FR,               $CERT_COUNTRY)
+  -c, --country CODE      C=   (defaut : $CERT_COUNTRY, vide sinon)
   -o, --org NOM           O=   (defaut : $CERT_ORG, vide sinon)
   -u, --ou NOM            OU=  (defaut : $CERT_OU, vide sinon)
   -e, --email ADRESSE     emailAddress dans le DN. "" pour ne pas en mettre.

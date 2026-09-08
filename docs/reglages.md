@@ -36,8 +36,10 @@ demande. À cocher si vous connaissez X.509 et trouvez le mode simple limitant.
 
 ## Valeurs par défaut du sujet
 
-Pré-remplissent chaque nouvelle demande. Aucune n'est renseignée à
-l'installation : mettez-y celles de votre organisation une fois pour toutes.
+Pré-remplissent chaque nouvelle demande. **Aucune n'est renseignée au premier
+lancement**, pas même le pays : les formulaires n'affichent que des exemples
+grisés. Mettez-y celles de votre organisation une fois pour toutes, et elles
+apparaîtront dans chaque demande.
 
 | Champ | Exemple |
 |---|---|

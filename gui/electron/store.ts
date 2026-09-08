@@ -35,11 +35,13 @@ export function defaults(): Settings {
     advancedByDefault: false,
     onboarded: false,
     defaults: {
-      country: process.env.CERT_COUNTRY || 'FR',
+      country: process.env.CERT_COUNTRY || '',
       state: process.env.CERT_STATE || '',
       locality: process.env.CERT_LOCALITY || '',
-      // Aucune organisation par defaut : chacun renseigne la sienne une fois
-      // pour toutes dans les reglages, ou par variable d'environnement.
+      // Rien n'est pre-rempli au premier lancement, pas meme le pays. Les
+      // formulaires n'affichent que des exemples grises ; chacun renseigne
+      // les siens une fois pour toutes dans les reglages, ou par variable
+      // d'environnement.
       org: process.env.CERT_ORG || '',
       ou: process.env.CERT_OU || '',
       email: process.env.CERT_EMAIL || '',

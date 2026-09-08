@@ -721,6 +721,23 @@ export const en: Record<MessageKey, string> = {
   'new.revealCsr': 'Show the file',
   'new.revealKey': 'Show the key',
 
+  // Greyed examples. These are not values: nothing is prefilled.
+  'ph.country': 'GB',
+  'ph.state': 'Greater London',
+  'ph.locality': 'London',
+  'ph.org': 'Acme Ltd',
+  'ph.ou': 'IT Department',
+  'ph.email': 'pki@example.com',
+  'ph.street': '12 High Street',
+  'ph.postalCode': 'EC1A 1BB',
+  'ph.givenName': 'Jane',
+  'ph.surname': 'Doe',
+  'ph.title': 'Security officer',
+  'ph.uid': 'jdoe',
+  'ph.serialNumber': 'SN-12345',
+  'ph.businessCategory': 'Private Organization',
+  'ph.dc': 'example',
+
   // -------------------------------------------------------------------------
   // Workspace
   // -------------------------------------------------------------------------

@@ -730,6 +730,23 @@ export const fr = {
   'new.revealCsr': 'Montrer le fichier',
   'new.revealKey': 'Montrer la clé',
 
+  // Exemples grises. Ce ne sont pas des valeurs : rien n'est pre-rempli.
+  'ph.country': 'FR',
+  'ph.state': 'Île-de-France',
+  'ph.locality': 'Paris',
+  'ph.org': 'Ma Société',
+  'ph.ou': 'Direction des systèmes d’information',
+  'ph.email': 'pki@exemple.fr',
+  'ph.street': '12 rue de la Paix',
+  'ph.postalCode': '75002',
+  'ph.givenName': 'Jean',
+  'ph.surname': 'Dupont',
+  'ph.title': 'Responsable sécurité',
+  'ph.uid': 'jdupont',
+  'ph.serialNumber': 'SN-12345',
+  'ph.businessCategory': 'Private Organization',
+  'ph.dc': 'exemple',
+
   // -------------------------------------------------------------------------
   // Espace de travail
   // -------------------------------------------------------------------------

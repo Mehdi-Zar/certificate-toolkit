@@ -258,6 +258,7 @@ export function SettingsPage() {
               <Input
                 id="dc"
                 maxLength={2}
+                placeholder={t('ph.country')}
                 value={draft.defaults.country}
                 onChange={(e) => setDefault('country', e.target.value.toUpperCase())}
               />
@@ -265,6 +266,7 @@ export function SettingsPage() {
             <Field label={t('field.state')} htmlFor="dst" help={t('field.state.help')}>
               <Input
                 id="dst"
+                placeholder={t('ph.state')}
                 value={draft.defaults.state}
                 onChange={(e) => setDefault('state', e.target.value)}
               />
@@ -272,6 +274,7 @@ export function SettingsPage() {
             <Field label={t('field.locality')} htmlFor="dl" help={t('field.locality.help')}>
               <Input
                 id="dl"
+                placeholder={t('ph.locality')}
                 value={draft.defaults.locality}
                 onChange={(e) => setDefault('locality', e.target.value)}
               />
@@ -279,6 +282,7 @@ export function SettingsPage() {
             <Field label={t('field.org')} htmlFor="do" help={t('field.org.help')}>
               <Input
                 id="do"
+                placeholder={t('ph.org')}
                 value={draft.defaults.org}
                 onChange={(e) => setDefault('org', e.target.value)}
               />
@@ -286,6 +290,7 @@ export function SettingsPage() {
             <Field label={t('field.ous')} htmlFor="dou" help={t('field.ous.help')}>
               <Input
                 id="dou"
+                placeholder={t('ph.ou')}
                 value={draft.defaults.ou}
                 onChange={(e) => setDefault('ou', e.target.value)}
               />
@@ -294,6 +299,7 @@ export function SettingsPage() {
               <Input
                 id="dmail"
                 type="email"
+                placeholder={t('ph.email')}
                 value={draft.defaults.email}
                 onChange={(e) => setDefault('email', e.target.value)}
               />
