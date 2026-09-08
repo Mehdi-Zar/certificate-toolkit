@@ -11,11 +11,21 @@ Deux interfaces sur la même logique :
 - une **application de bureau**, pour un usage quotidien ;
 - deux **scripts** en ligne de commande, pour l'automatisation.
 
-## Démarrer en trois minutes
+## Télécharger
 
-Téléchargez `Certificate Toolkit 1.0.0.exe` depuis les
-[releases](https://github.com/Mehdi-Zar/certificate-toolkit/releases) et
-double-cliquez. Rien à installer, rien à configurer : OpenSSL est inclus.
+### ⬇ [Certificate Toolkit 1.0.0.exe](https://github.com/Mehdi-Zar/certificate-toolkit/releases/download/v1.0.0/Certificate.Toolkit.1.0.0.exe)
+
+Version portable : on télécharge, on double-clique, rien ne s'installe.
+
+Vous préférez un raccourci dans le menu Démarrer ?
+[Prenez l'installeur](https://github.com/Mehdi-Zar/certificate-toolkit/releases/download/v1.0.0/Certificate.Toolkit.Setup.1.0.0.exe).
+Les [autres versions](https://github.com/Mehdi-Zar/certificate-toolkit/releases/latest)
+sont sur la page des releases.
+
+Rien d'autre à installer : OpenSSL est inclus, et aucun droit administrateur
+n'est demandé.
+
+## Démarrer en trois minutes
 
 Au premier lancement, un assistant vous fait choisir votre dossier de travail
 puis explique le parcours. Suivez-le.

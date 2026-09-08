@@ -1,5 +1,9 @@
 # Documentation
 
+**⬇ [Télécharger l'application](https://github.com/Mehdi-Zar/certificate-toolkit/releases/download/v1.0.0/Certificate.Toolkit.1.0.0.exe)**
+(version portable, 110 Mo) ou voir
+[toutes les versions](https://github.com/Mehdi-Zar/certificate-toolkit/releases/latest).
+
 Chaque page répond à un seul besoin. Partez de celui que vous avez.
 
 ## J'utilise l'outil

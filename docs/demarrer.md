@@ -18,9 +18,10 @@ L'étape 2 ne dépend pas de vous. Vous pouvez fermer l'application entre-temps.
 
 ## Avant de commencer
 
-Il vous faut l'application installée
-([procédure](installer.md)) et l'adresse à laquelle votre organisation reçoit
-les demandes de certificat : un portail, une boîte aux lettres, un outil de
+Il vous faut l'application, à
+[télécharger ici](https://github.com/Mehdi-Zar/certificate-toolkit/releases/download/v1.0.0/Certificate.Toolkit.1.0.0.exe)
+(la [procédure complète](installer.md) explique l'avertissement Windows), et
+l'adresse à laquelle votre organisation reçoit les demandes de certificat : un portail, une boîte aux lettres, un outil de
 tickets. Demandez-la à votre équipe sécurité si vous ne la connaissez pas.
 
 ## Étape 1 : choisir votre espace de travail

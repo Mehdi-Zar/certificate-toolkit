@@ -1,19 +1,38 @@
 # Installer l'application
 
-Deux formes au choix. Aucune ne demande de droits administrateur, et aucune ne
-demande d'installer OpenSSL : il est inclus.
+## Télécharger
 
-| Forme | Fichier | Pour qui |
-|---|---|---|
-| **Portable** | `Certificate Toolkit 1.0.0.exe` | Poste verrouillé, usage ponctuel, clé USB |
-| **Installeur** | `Certificate Toolkit Setup 1.0.0.exe` | Usage régulier, raccourci dans le menu Démarrer |
+### ⬇ [Certificate Toolkit 1.0.0.exe](https://github.com/Mehdi-Zar/certificate-toolkit/releases/download/v1.0.0/Certificate.Toolkit.1.0.0.exe)
 
-Les deux pèsent environ 111 Mo. Ils font la même chose ; le portable ne
-s'installe pas, il se lance.
+**Version portable.**
+
+On télécharge, on double-clique. Rien ne s'installe.
+
+### ⬇ [Certificate Toolkit Setup 1.0.0.exe](https://github.com/Mehdi-Zar/certificate-toolkit/releases/download/v1.0.0/Certificate.Toolkit.Setup.1.0.0.exe)
+
+**Installeur.**
+
+Avec raccourci dans le menu Démarrer.
+
+Les deux pèsent environ 111 Mo et font la même chose. Aucun ne demande de
+droits administrateur, et aucun ne demande d'installer OpenSSL : il est inclus.
+
+Le lien ne fonctionne que si vous êtes connecté à un compte GitHub ayant accès
+au dépôt, qui est privé. Toutes les versions sont sur la
+[page des releases](https://github.com/Mehdi-Zar/certificate-toolkit/releases/latest).
+
+## Laquelle choisir
+
+| Votre situation | La version |
+|---|---|
+| Poste verrouillé, pas de droits d'installation | Portable |
+| Usage ponctuel, ou depuis une clé USB | Portable |
+| Usage régulier, vous voulez un raccourci | Installeur |
+| Vous hésitez | Portable |
 
 ## Version portable
 
-1. Téléchargez `Certificate Toolkit 1.0.0.exe`.
+1. Téléchargez le fichier ci-dessus.
 2. Placez-le où vous voulez.
 3. Double-cliquez.
 
@@ -22,7 +41,7 @@ fichier.
 
 ## Version installée
 
-1. Téléchargez `Certificate Toolkit Setup 1.0.0.exe`.
+1. Téléchargez l'installeur ci-dessus.
 2. Double-cliquez et suivez l'assistant. Vous pouvez changer le dossier
    d'installation.
 3. L'application apparaît dans le menu Démarrer.
