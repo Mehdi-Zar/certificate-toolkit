@@ -66,7 +66,7 @@ Le CN devient automatiquement le premier SAN. Options : `-a/--alt`, `-c/--countr
 ### Etape 3 - assemblage du PFX
 
 ```bash
-./make-pfx.sh www.exemple.fr      # lit <fqdn>/Signed/
+./make-pfx.sh www.exemple.fr      # lit <nom>/Signed/
 ./make-pfx.sh api.exemple.fr signed.p7b
 ./make-pfx.sh api.exemple.fr cert.cer -C intermediate.cer -C root.cer
 ./make-pfx.sh api.exemple.fr --no-root --compat -p 'MonSecret'
@@ -89,9 +89,9 @@ Surchargeables par variables d'environnement :
 |---|---|
 | `CERT_HOME` | dossier du script |
 | `CERT_COUNTRY` | `FR` |
-| `CERT_ORG` | `Ma Societe` |
-| `CERT_OU` | `SecOps` |
-| `CERT_EMAIL` | `pki@exemple.fr` |
+| `CERT_ORG` | (vide) |
+| `CERT_OU` | (vide) |
+| `CERT_EMAIL` | (vide) |
 | `PFX_PASSWORD` / `KEY_PASSWORD` | (demande interactivement) |
 
 ---

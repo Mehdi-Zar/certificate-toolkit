@@ -23,9 +23,9 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # --------------------------------------------------------------------------
 ROOT_DIR="${CERT_HOME:-$SCRIPT_DIR}"
 COUNTRY="${CERT_COUNTRY:-FR}"
-ORG="${CERT_ORG:-Ma Societe}"
-OU="${CERT_OU:-SecOps}"
-EMAIL="${CERT_EMAIL:-pki@exemple.fr}"
+ORG="${CERT_ORG:-}"
+OU="${CERT_OU:-}"
+EMAIL="${CERT_EMAIL:-}"
 BITS=2048
 KEYTYPE="rsa"          # rsa | ec
 CURVE="P-256"
@@ -46,8 +46,8 @@ Options :
                           "www.exemple.fr"  -> DNS:www.exemple.fr
                           "IP:10.0.0.1", "DNS:x", "email:x", "URI:x"
   -c, --country CODE      C=   (defaut : FR,               $CERT_COUNTRY)
-  -o, --org NOM           O=   (defaut : Ma Societe,           $CERT_ORG)
-  -u, --ou NOM            OU=  (defaut : SecOps, $CERT_OU)
+  -o, --org NOM           O=   (defaut : $CERT_ORG, vide sinon)
+  -u, --ou NOM            OU=  (defaut : $CERT_OU, vide sinon)
   -e, --email ADRESSE     emailAddress dans le DN. "" pour ne pas en mettre.
   -b, --bits N            Taille de cle RSA : 2048 | 3072 | 4096 (defaut 2048)
       --ec [COURBE]       Cle EC (defaut P-256) au lieu de RSA

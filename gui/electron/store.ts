@@ -38,9 +38,11 @@ export function defaults(): Settings {
       country: process.env.CERT_COUNTRY || 'FR',
       state: process.env.CERT_STATE || '',
       locality: process.env.CERT_LOCALITY || '',
-      org: process.env.CERT_ORG || 'Ma Societe',
-      ou: process.env.CERT_OU || 'SecOps',
-      email: process.env.CERT_EMAIL || 'pki@exemple.fr',
+      // Aucune organisation par defaut : chacun renseigne la sienne une fois
+      // pour toutes dans les reglages, ou par variable d'environnement.
+      org: process.env.CERT_ORG || '',
+      ou: process.env.CERT_OU || '',
+      email: process.env.CERT_EMAIL || '',
     },
   }
 }

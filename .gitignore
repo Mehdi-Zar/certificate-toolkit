@@ -31,8 +31,8 @@ Signed/
 .env.*
 !.env.example
 
-# Dossier de travail historique (contient une cle privee reelle)
-/www.exemple.fr/
+# Les dossiers de travail sont couverts par les regles d'extension ci-dessus
+# (cles, certificats, CSR) et par Signed/.
 
 # ---------------------------------------------------------------------------
 # Node / Electron
