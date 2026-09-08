@@ -716,6 +716,21 @@ export const en: Record<MessageKey, string> = {
     'The application ships its own copy of OpenSSL so it depends on nothing else. Leave "openssl" to use it; give a full path only if your organisation mandates a specific binary.',
 
   // -------------------------------------------------------------------------
+  // Workspace
+  // -------------------------------------------------------------------------
+  'workspace.label': 'Workspace',
+  'workspace.desc': 'All your requests are filed here, one folder each.',
+  'workspace.change': 'Change folder',
+  'workspace.open': 'Open',
+  'workspace.first': 'First thing to do: choose where to work.',
+  'workspace.changed': 'Workspace: {path}',
+  'workspace.willContain': 'Each request gets its own folder in there:',
+  'workspace.fileKey': 'the private key, which never leaves it',
+  'workspace.fileCsr': 'the request to send to your authority',
+  'workspace.fileSigned': 'a Signed/ folder to drop its answer into',
+  'workspace.filePfx': 'the final certificate, in every format',
+
+  // -------------------------------------------------------------------------
   // Getting started wizard
   // -------------------------------------------------------------------------
   'wizard.reopen': 'How it works',

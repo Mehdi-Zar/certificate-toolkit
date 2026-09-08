@@ -13,6 +13,7 @@ import {
   ArrowRight,
   Check,
   FolderOpen,
+  FolderTree,
   KeyRound,
   Package,
   Send,
@@ -26,6 +27,7 @@ import type { Translate } from '../../shared/i18n/index.ts'
 import { api, unwrap } from '../lib/api.ts'
 import { useApp, useT } from '../lib/store.tsx'
 import { FormatTable } from './FormatTable.tsx'
+import { WorkspaceContents } from './Workspace.tsx'
 import { Button, Card, cx } from './ui.tsx'
 
 export function Onboarding({
@@ -172,21 +174,34 @@ function FolderStep({
     <div className="flex flex-col gap-4">
       <p className="text-[13px] leading-relaxed text-muted">{t('wizard.folder.body')}</p>
 
-      <div className="rounded-lg border border-line bg-sunken p-4">
-        <p className="mb-1.5 text-[11px] font-medium uppercase tracking-wide text-subtle">
-          {t('wizard.folder.current')}
-        </p>
-        <p className="mb-3 break-all font-mono text-[12px] text-ink selectable">{root || '…'}</p>
-        <Button
-          icon={<FolderOpen className="size-4" />}
-          onClick={async () => {
-            const dir = await unwrap(api.system.pickDir())
-            if (dir) onPick(dir)
-          }}
-        >
-          {t('wizard.folder.choose')}
-        </Button>
+      <div className="rounded-[var(--radius-panel)] border-2 border-accent/35 bg-accent-soft p-5">
+        <div className="flex items-center gap-3.5">
+          <span className="grid size-11 shrink-0 place-items-center rounded-lg bg-accent text-accent-fg">
+            <FolderTree className="size-5" />
+          </span>
+          <div className="min-w-0 flex-1">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.07em] text-accent">
+              {t('workspace.label')}
+            </p>
+            <p className="mt-0.5 break-all font-mono text-[13px] text-ink selectable">
+              {root || '…'}
+            </p>
+          </div>
+          <Button
+            variant="primary"
+            className="shrink-0"
+            icon={<FolderOpen className="size-4" />}
+            onClick={async () => {
+              const dir = await unwrap(api.system.pickDir())
+              if (dir) onPick(dir)
+            }}
+          >
+            {t('wizard.folder.choose')}
+          </Button>
+        </div>
       </div>
+
+      <WorkspaceContents t={t} />
 
       <div className="flex items-start gap-2.5 rounded-lg border border-warn/30 bg-warn-soft px-3.5 py-3">
         <TriangleAlert className="mt-0.5 size-4 shrink-0 text-warn" />

@@ -7,7 +7,7 @@
  */
 import { BrowserWindow, clipboard, dialog, ipcMain, shell } from 'electron'
 import { copyFile, mkdir, readFile } from 'node:fs/promises'
-import { basename, join } from 'node:path'
+import { basename, join, normalize } from 'node:path'
 import type {
   CertEntry,
   CsrPreview,
@@ -180,7 +180,11 @@ export function registerIpc(): void {
   })
 
   handle<boolean>('shell:openDir', async (path: string) => {
-    const err = await shell.openPath(path)
+    // La racine de travail n'existe pas tant qu'aucune demande n'a ete creee.
+    // L'ouvrir revient a la creer : c'est ce que l'utilisateur veut voir.
+    const dir = normalize(path)
+    await mkdir(dir, { recursive: true })
+    const err = await shell.openPath(dir)
     if (err) throw new Error(err)
     return true
   })

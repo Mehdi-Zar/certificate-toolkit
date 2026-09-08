@@ -53,6 +53,7 @@ import {
   wrapFingerprint,
 } from '../lib/format.ts'
 import { useApp, useT } from '../lib/store.tsx'
+import { useSystem } from '../lib/system.ts'
 import { BackLink } from './NewRequestPage.tsx'
 
 /**
@@ -83,6 +84,7 @@ function ExistingFiles({ entry, t }: { entry: CertEntry; t: Translate }) {
 export function DetailPage({ fqdn, navigate }: { fqdn: string; navigate: (r: Route) => void }) {
   const { refresh, settings } = useApp()
   const t = useT()
+  const system = useSystem()
   const lang: Lang = settings?.language ?? 'fr'
   const [entry, setEntry] = useState<CertEntry | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -151,7 +153,7 @@ export function DetailPage({ fqdn, navigate }: { fqdn: string; navigate: (r: Rou
           <Button
             size="sm"
             icon={<FolderOpen className="size-3.5" />}
-            onClick={() => void api.system.openDir(entry.dir)}
+            onClick={() => system.openDir(entry.dir)}
           >
             {t('common.openFolder')}
           </Button>

@@ -725,6 +725,21 @@ export const fr = {
     'L’application embarque sa propre copie d’OpenSSL, pour ne dépendre de rien sur le poste. Laissez « openssl » pour l’utiliser ; indiquez un chemin complet seulement si votre organisation impose un binaire précis.',
 
   // -------------------------------------------------------------------------
+  // Espace de travail
+  // -------------------------------------------------------------------------
+  'workspace.label': 'Espace de travail',
+  'workspace.desc': 'Toutes vos demandes sont rangées ici, une par dossier.',
+  'workspace.change': 'Changer de dossier',
+  'workspace.open': 'Ouvrir',
+  'workspace.first': 'Première chose à faire : choisir où travailler.',
+  'workspace.changed': 'Espace de travail : {path}',
+  'workspace.willContain': 'Chaque demande y recevra son dossier :',
+  'workspace.fileKey': 'la clé privée, qui ne bouge jamais d’ici',
+  'workspace.fileCsr': 'la demande à envoyer à l’autorité',
+  'workspace.fileSigned': 'un dossier Signed/ où déposer sa réponse',
+  'workspace.filePfx': 'le certificat final, dans tous ses formats',
+
+  // -------------------------------------------------------------------------
   // Assistant de demarrage
   // -------------------------------------------------------------------------
   'wizard.reopen': 'Comment ça marche ?',

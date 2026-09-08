@@ -1,6 +1,8 @@
 import type { CertificateToolkitApi } from '../../electron/preload.ts'
 import type { Reply } from '../../shared/types.ts'
 
+export type { Reply }
+
 declare global {
   interface Window {
     certtk: CertificateToolkitApi

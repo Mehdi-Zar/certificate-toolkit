@@ -4,7 +4,6 @@
 import {
   ChevronRight,
   FilePlus2,
-  FolderOpen,
   Inbox,
   RefreshCw,
   Search,
@@ -15,10 +14,10 @@ import type { CertEntry, EntryStatus } from '../../shared/types.ts'
 import { PageBody, PageHeader } from '../components/PageHeader.tsx'
 import { Badge, Button, Card, EmptyState, ErrorBanner, Input, Spinner, cx } from '../components/ui.tsx'
 import type { Route } from '../App.tsx'
-import { api } from '../lib/api.ts'
 import { getTemplate } from '../../shared/templates.ts'
 import type { Translate } from '../../shared/i18n/index.ts'
 import { STATUS_TONE, expiryLabel, isoDate, shortDate, statusHintKey, statusLabelKey } from '../lib/format.ts'
+import { WorkspaceBanner } from '../components/Workspace.tsx'
 import { useApp, useT } from '../lib/store.tsx'
 
 type Filter = 'all' | 'todo' | EntryStatus
@@ -55,17 +54,8 @@ export function CertificatesPage({ navigate }: { navigate: (r: Route) => void })
     <>
       <PageHeader
         title={t('list.title')}
-        description={settings?.rootDir}
         actions={
           <>
-            <Button
-              size="sm"
-              icon={<FolderOpen className="size-3.5" />}
-              onClick={() => settings && void api.system.openDir(settings.rootDir)}
-              disabled={!settings}
-            >
-              {t('common.openFolder')}
-            </Button>
             <Button
               size="sm"
               icon={<RefreshCw className={cx('size-3.5', loading && 'animate-spin')} />}
@@ -88,6 +78,8 @@ export function CertificatesPage({ navigate }: { navigate: (r: Route) => void })
 
       <PageBody>
         {error && <ErrorBanner>{error}</ErrorBanner>}
+
+        <WorkspaceBanner />
 
         {entries.length > 0 && (
           <div className="flex items-center gap-3">
