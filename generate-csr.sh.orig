@@ -1,0 +1,62 @@
+#!/usr/bin/env bash
+
+FQDN="www.exemple.fr"
+
+# Création du dossier
+mkdir -p "$FQDN"
+
+# Noms des fichiers
+PRIVATE_KEY="$FQDN/$FQDN.key.pem"
+CONFIG_FILE="$FQDN/$FQDN-req.cnf"
+CSR_FILE="$FQDN/$FQDN.csr"
+
+# Génération de la clé privée RSA
+openssl genpkey \
+  -algorithm RSA \
+  -pkeyopt rsa_keygen_bits:2048 \
+  -out "$PRIVATE_KEY"
+
+# Protection de la clé privée
+chmod 600 "$PRIVATE_KEY"
+
+# Création du fichier de configuration OpenSSL
+cat <<EOF > "$CONFIG_FILE"
+[ req ]
+default_md = sha256
+prompt = no
+distinguished_name = req_distinguished_name
+req_extensions = req_ext
+
+[ req_distinguished_name ]
+countryName = FR
+organizationName = Ma Societe
+organizationalUnitName = SecOps
+commonName = $FQDN
+emailAddress = pki@exemple.fr
+
+[ req_ext ]
+subjectAltName = @alt_names
+
+[ alt_names ]
+DNS.1 = $FQDN
+EOF
+
+# Génération de la CSR
+openssl req \
+  -new \
+  -key "$PRIVATE_KEY" \
+  -out "$CSR_FILE" \
+  -config "$CONFIG_FILE" \
+  -extensions req_ext
+
+# Vérification de la CSR
+openssl req \
+  -in "$CSR_FILE" \
+  -noout \
+  -text
+
+echo
+echo "Fichiers générés dans le dossier : $FQDN"
+echo "Clé privée : $PRIVATE_KEY"
+echo "Configuration : $CONFIG_FILE"
+echo "CSR : $CSR_FILE"

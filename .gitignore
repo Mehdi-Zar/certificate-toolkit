@@ -1,0 +1,56 @@
+# ---------------------------------------------------------------------------
+# SECRETS - ne JAMAIS versionner. Ce depot est un outillage PKI : les
+# artefacts produits (cles privees, PFX, mots de passe) restent en local.
+# ---------------------------------------------------------------------------
+*.key
+*.key.pem
+*.pem
+*.pfx
+*.p12
+*.jks
+*.keystore
+*.der
+*.crt
+*.cer
+*.p7b
+*.p7c
+*.csr
+*.meta
+*.zip
+
+# Dossiers de travail generes par generate-csr.sh / la GUI (un par FQDN)
+Signed/
+/certs/
+/out/
+
+# Fichiers de notes contenant potentiellement des mots de passe
+*password*.txt
+*passwd*.txt
+*.secret
+.env
+.env.*
+!.env.example
+
+# Dossier de travail historique (contient une cle privee reelle)
+/www.exemple.fr/
+
+# ---------------------------------------------------------------------------
+# Node / Electron
+# ---------------------------------------------------------------------------
+node_modules/
+dist/
+dist-electron/
+release/
+.vite/
+*.log
+npm-debug.log*
+
+# ---------------------------------------------------------------------------
+# OS / editeurs
+# ---------------------------------------------------------------------------
+Thumbs.db
+Desktop.ini
+.DS_Store
+.idea/
+.vscode/*
+!.vscode/extensions.json
