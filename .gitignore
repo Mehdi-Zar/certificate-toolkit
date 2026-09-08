@@ -54,3 +54,11 @@ Desktop.ini
 .idea/
 .vscode/*
 !.vscode/extensions.json
+
+# ---------------------------------------------------------------------------
+# GUI : les icones generees sont versionnees, pas les artefacts de build
+# (couverts plus haut par dist/, dist-electron/, release/, node_modules/).
+# ---------------------------------------------------------------------------
+gui/dist/
+gui/dist-electron/
+gui/release/

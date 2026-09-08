@@ -1,0 +1,46 @@
+{
+  "name": "csr-toolkit-gui",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Interface graphique pour la generation de CSR et l'assemblage de PFX",
+  "author": "Mehdi-Zar",
+  "license": "MIT",
+  "main": "dist-electron/main.js",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "pack": "npm run build && electron-builder --dir",
+    "dist": "npm run build && electron-builder",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "lucide-react": "^1.42.0",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.3.3",
+    "@types/node": "^24.9.0",
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.0",
+    "@vitejs/plugin-react": "^6.1.1",
+    "electron": "^44.2.0",
+    "electron-builder": "^26.15.3",
+    "tailwindcss": "^4.3.3",
+    "typescript": "^5.9.3",
+    "vite": "^8.2.2",
+    "vite-plugin-electron": "^1.1.2"
+  },
+  "build": {
+    "appId": "com.mehdizar.csr-toolkit",
+    "productName": "CSR Toolkit",
+    "directories": { "output": "release", "buildResources": "build" },
+    "files": ["dist/**", "dist-electron/**"],
+    "win": { "target": ["nsis", "portable"] },
+    "mac": { "target": ["dmg"], "category": "public.app-category.developer-tools" },
+    "linux": { "target": ["AppImage", "deb"], "category": "Development" },
+    "nsis": { "oneClick": false, "allowToChangeInstallationDirectory": true }
+  }
+}
