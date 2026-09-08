@@ -8,51 +8,166 @@
 // ---------------------------------------------------------------------------
 
 export interface Settings {
-  /** Racine ou vit un dossier par FQDN. Equivalent de $CERT_HOME dans la CLI. */
+  /** Racine ou vit un dossier par demande. Equivalent de $CERT_HOME dans la CLI. */
   rootDir: string
   /** Binaire openssl : "openssl" si dans le PATH, sinon chemin absolu. */
   opensslPath: string
   defaults: SubjectDefaults
+  /** Affiche d'emblee les options avancees dans le formulaire. */
+  advancedByDefault: boolean
 }
 
 export interface SubjectDefaults {
   country: string
+  state: string
+  locality: string
   org: string
   ou: string
   email: string
 }
 
 // ---------------------------------------------------------------------------
-// Demande de CSR
+// Sujet du certificat (DN)
+//
+// Tous les champs sont facultatifs sauf le CN. Les listes permettent les
+// attributs repetables, que la plupart des PKI d'entreprise utilisent.
 // ---------------------------------------------------------------------------
 
-export type KeyType = 'rsa' | 'ec'
-export type Curve = 'P-256' | 'P-384' | 'P-521'
-export type Digest = 'sha256' | 'sha384' | 'sha512'
-export type SanType = 'DNS' | 'IP' | 'email' | 'URI'
+export interface Subject {
+  commonName: string
+  country: string
+  state: string
+  locality: string
+  org: string
+  /** OU repetables : "Direction", "Equipe Reseau"... */
+  ous: string[]
+  email: string
+  serialNumber: string
+  businessCategory: string
+  /** domainComponent repetables : "exemple", "fr" -> DC=exemple,DC=fr */
+  domainComponents: string[]
+  uid: string
+  street: string
+  postalCode: string
+  title: string
+  givenName: string
+  surname: string
+}
+
+// ---------------------------------------------------------------------------
+// Noms alternatifs
+// ---------------------------------------------------------------------------
+
+export type SanType = 'DNS' | 'IP' | 'email' | 'URI' | 'RID' | 'UPN' | 'otherName'
 
 export interface San {
   type: SanType
   value: string
+  /** Pour otherName uniquement : l'OID du type. UPN a le sien, pre-rempli. */
+  oid?: string
 }
 
-export interface CsrRequest {
-  fqdn: string
-  sans: San[]
-  country: string
-  org: string
-  ou: string
-  email: string
-  keyType: KeyType
+// ---------------------------------------------------------------------------
+// Cle privee
+// ---------------------------------------------------------------------------
+
+export type KeyAlgorithm = 'rsa' | 'rsa-pss' | 'ec' | 'ed25519' | 'ed448' | 'ml-dsa'
+
+export interface KeySpec {
+  algorithm: KeyAlgorithm
+  /** RSA / RSA-PSS. */
   bits: number
-  curve: Curve
+  /** EC : nom de courbe openssl (prime256v1, secp384r1, brainpoolP256r1...). */
+  curve: string
+  /** ML-DSA : niveau de securite. */
+  mldsaLevel: '44' | '65' | '87'
+  /** Chiffre la cle privee sur le disque (AES-256). */
+  encrypt: boolean
+  passphrase: string
+}
+
+export type Digest = 'sha256' | 'sha384' | 'sha512' | 'sha3-256' | 'sha3-384' | 'sha3-512'
+
+// ---------------------------------------------------------------------------
+// Extensions demandees
+// ---------------------------------------------------------------------------
+
+/** Les 9 bits de keyUsage, dans l'ordre de la RFC 5280. */
+export type KeyUsageBit =
+  | 'digitalSignature'
+  | 'nonRepudiation'
+  | 'keyEncipherment'
+  | 'dataEncipherment'
+  | 'keyAgreement'
+  | 'keyCertSign'
+  | 'cRLSign'
+  | 'encipherOnly'
+  | 'decipherOnly'
+
+export interface Extensions {
+  basicConstraints: {
+    include: boolean
+    ca: boolean
+    /** Profondeur de chaine autorisee sous cette CA. null = non contraint. */
+    pathLen: number | null
+    critical: boolean
+  }
+  keyUsage: {
+    include: boolean
+    critical: boolean
+    bits: KeyUsageBit[]
+  }
+  extendedKeyUsage: {
+    include: boolean
+    critical: boolean
+    /** Noms openssl (serverAuth...) ou OID bruts (1.3.6.1.4.1.311.20.2.2). */
+    purposes: string[]
+  }
+  /** subjectKeyIdentifier = hash */
+  subjectKeyIdentifier: boolean
+  /** tlsfeature = status_request : le serveur DOIT agrafer une reponse OCSP. */
+  mustStaple: boolean
+  /** OID de politiques de certification. */
+  certificatePolicies: string[]
+  /** URI des listes de revocation. */
+  crlDistributionPoints: string[]
+  authorityInfoAccess: {
+    ocsp: string[]
+    caIssuers: string[]
+  }
+  /** Echappatoire : lignes ajoutees telles quelles dans la section req_ext. */
+  custom: Array<{ name: string; value: string; critical: boolean }>
+}
+
+// ---------------------------------------------------------------------------
+// Demande complete
+// ---------------------------------------------------------------------------
+
+export interface CsrRequest {
+  /**
+   * Identifiant de la demande : c'est le nom du dossier de travail.
+   * Distinct du CN, qui peut contenir des espaces ("Jean Dupont").
+   */
+  name: string
+  templateId: string
+  subject: Subject
+  sans: San[]
+  key: KeySpec
   digest: Digest
+  extensions: Extensions
+  attributes: {
+    /** Exige par certaines PKI pour autoriser la revocation par le demandeur. */
+    challengePassword: string
+    unstructuredName: string
+  }
+  /** Encodage des chaines du DN. utf8only convient partout aujourd'hui. */
+  stringMask: 'utf8only' | 'nombstr' | 'pkix' | 'default'
   /** Ecrase une cle privee existante. Rend inutilisable une CSR deja chez la PKI. */
   force: boolean
 }
 
 export interface CsrResult {
-  fqdn: string
+  name: string
   dir: string
   keyPath: string
   csrPath: string
@@ -64,6 +179,21 @@ export interface CsrResult {
   keyDesc: string
   subject: string
   sans: string[]
+  /** Relecture de la CSR produite, telle qu'openssl la voit. */
+  text: string
+}
+
+/** Rendu d'une demande sans rien ecrire : sert a l'apercu dans le formulaire. */
+export interface CsrPreview {
+  config: string
+  command: string
+  warnings: Warning[]
+}
+
+export interface Warning {
+  level: 'error' | 'warn' | 'info'
+  field?: string
+  message: string
 }
 
 // ---------------------------------------------------------------------------
@@ -72,7 +202,7 @@ export interface CsrResult {
 
 export interface PfxRequest {
   fqdn: string
-  /** Fichiers signes explicites. Vide => auto-detection dans <fqdn>/Signed/. */
+  /** Fichiers signes explicites. Vide => auto-detection dans <nom>/Signed/. */
   inputs: string[]
   /** Certificats de CA supplementaires (-C dans la CLI). */
   chainFiles: string[]
@@ -140,7 +270,7 @@ export type EntryStatus =
   | 'issued'
   /** PFX present mais le certificat est expire. */
   | 'expired'
-  /** PFX present et expiration a moins de 30 jours. */
+  /** PFX present et expiration proche. */
   | 'expiring'
   /** Dossier incomplet ou illisible. */
   | 'broken'
@@ -156,6 +286,8 @@ export interface CertEntry {
   createdAt: string | null
   keyDesc: string | null
   sans: string[]
+  /** Identifiant du modele utilise, si la demande vient de la GUI. */
+  templateId: string | null
   /** Renseigne uniquement quand un certificat emis est lisible. */
   cert: CertInfo | null
 }
@@ -170,4 +302,15 @@ export interface OpensslProbe {
   available: boolean
   version: string
   path: string
+  /** Ce que ce binaire sait faire : conditionne les choix offerts. */
+  capabilities: Capabilities
+}
+
+export interface Capabilities {
+  curves: string[]
+  ed25519: boolean
+  ed448: boolean
+  rsaPss: boolean
+  mldsa: boolean
+  sha3: boolean
 }

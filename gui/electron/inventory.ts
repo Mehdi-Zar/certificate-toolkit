@@ -80,9 +80,11 @@ export async function describeEntry(
   let keyDesc: string | null = null
   let sans: string[] = []
   let createdAt: string | null = null
+  let templateId: string | null = null
   try {
     const meta = parseMeta(await readFile(p.meta, 'utf8'))
     keyDesc = meta.KEYDESC ?? null
+    templateId = meta.TEMPLATE ?? null
     sans = (meta.SANS ?? '').split(/\s+/).filter(Boolean)
   } catch {
     /* pas de .meta : dossier cree a la main ou par une ancienne version */
@@ -106,6 +108,7 @@ export async function describeEntry(
     createdAt,
     keyDesc,
     sans: cert && cert.sans.length > 0 ? cert.sans : sans,
+    templateId,
     cert,
   }
 }

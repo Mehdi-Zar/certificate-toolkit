@@ -109,16 +109,33 @@ npm run dev        # developpement
 npm run dist       # installateurs Windows / macOS / Linux
 ```
 
-Trois ecrans : la liste des dossiers de FQDN triee par urgence (a assembler,
-expire, a renouveler, en attente PKI), le formulaire de demande, et le detail
-d'un FQDN qui enchaine les trois etapes — la CSR, le depot des retours de la
-PKI par glisser-deposer, puis l'assemblage du PFX avec ses controles.
+Trois ecrans : la liste des dossiers triee par urgence (a assembler, expire, a
+renouveler, en attente PKI), le formulaire de demande, et le detail d'un dossier
+qui enchaine les trois etapes — la CSR, le depot des retours de la PKI par
+glisser-deposer, puis l'assemblage du PFX avec ses controles.
 
-La GUI ne depend pas de bash : la logique des scripts y est portee en
-TypeScript et appelle `openssl` directement. Elle passe aussi les mots de passe
-par l'environnement d'openssl plutot que par sa ligne de commande.
+Une demande commence par le choix d'un **modele** decrit en clair — « un site
+web public », « une carte a puce Windows », « une autorite intermediaire » —
+qui pre-remplit les extensions X.509 correspondantes. Le **mode avance** ouvre
+ensuite chaque reglage : sujet complet, sept types de SAN, usages de cle,
+usages etendus par OID, contraintes de CA, agrafage OCSP, politiques, CRL,
+OCSP, extensions libres. Un apercu montre en direct le fichier de configuration
+produit et signale les incoherences avant l'envoi a la PKI.
+
+La GUI ne depend pas de bash : la logique est ecrite en TypeScript et appelle
+`openssl` directement. Elle passe aussi les mots de passe par l'environnement
+d'openssl plutot que par sa ligne de commande.
 
 Detail : [`gui/README.md`](gui/README.md).
+
+### Ce que la CLI ne fait pas
+
+Les deux interfaces partagent la meme arborescence et le meme fichier `.meta` :
+une CSR generee par la GUI s'assemble avec `make-pfx.sh`, et une CSR generee
+par `generate-csr.sh` s'assemble dans la GUI. Mais la **generation** a diverge :
+`generate-csr.sh` reste limite a un profil serveur TLS avec cle RSA ou EC, la
+ou la GUI couvre les modeles, les sept types de SAN, le sujet complet et toutes
+les extensions. Pour un profil autre qu'un serveur web, passez par la GUI.
 
 ---
 

@@ -7,6 +7,7 @@
 import { contextBridge, ipcRenderer, webUtils } from 'electron'
 import type {
   CertEntry,
+  CsrPreview,
   CsrRequest,
   CsrResult,
   OpensslProbe,
@@ -33,6 +34,7 @@ const api = {
   },
   csr: {
     generate: (req: CsrRequest) => call<CsrResult>('csr:generate', req),
+    preview: (req: CsrRequest) => call<CsrPreview>('csr:preview', req),
     read: (fqdn: string) => call<string>('csr:read', fqdn),
   },
   signed: {

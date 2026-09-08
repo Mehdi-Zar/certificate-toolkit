@@ -4,12 +4,13 @@
  */
 import { CheckCircle2, FolderOpen, RotateCcw, Save, XCircle } from 'lucide-react'
 import { useEffect, useState } from 'react'
-import type { Settings } from '../../shared/types.ts'
+import type { Capabilities, Settings } from '../../shared/types.ts'
 import { PageBody, PageHeader } from '../components/PageHeader.tsx'
 import { useToast } from '../components/Toast.tsx'
 import {
   Button,
   Card,
+  Check as Checkbox,
   ErrorBanner,
   Field,
   Input,
@@ -19,6 +20,38 @@ import {
 } from '../components/ui.tsx'
 import { api, message, unwrap } from '../lib/api.ts'
 import { useApp } from '../lib/store.tsx'
+
+/** Ce que le binaire detecte sait faire : conditionne les choix du formulaire. */
+function CapabilityList({ caps }: { caps: Capabilities }) {
+  const items: Array<[string, boolean]> = [
+    ['RSA-PSS', caps.rsaPss],
+    ['Ed25519', caps.ed25519],
+    ['Ed448', caps.ed448],
+    ['ML-DSA (post-quantique)', caps.mldsa],
+    ['SHA-3', caps.sha3],
+  ]
+  return (
+    <div className="rounded-lg border border-line bg-sunken px-3.5 py-3">
+      <p className="mb-2 text-[12px] font-medium text-muted">Algorithmes disponibles</p>
+      <div className="flex flex-wrap gap-1.5">
+        {items.map(([label, on]) => (
+          <span
+            key={label}
+            className={cx(
+              'rounded-full px-2 py-0.5 text-[11px]',
+              on ? 'bg-ok-soft text-ok' : 'bg-inset text-subtle line-through',
+            )}
+          >
+            {label}
+          </span>
+        ))}
+      </div>
+      <p className="mt-2 text-[11.5px] text-subtle">
+        Courbes elliptiques : {caps.curves.join(', ') || 'aucune detectee'}
+      </p>
+    </div>
+  )
+}
 
 export function SettingsPage() {
   const { settings, probe, updateSettings, refresh } = useApp()
@@ -166,6 +199,20 @@ export function SettingsPage() {
                 </Button>
               </div>
             )}
+
+            {probe?.available && <CapabilityList caps={probe.capabilities} />}
+          </Card>
+        </section>
+
+        <section>
+          <SectionTitle>Formulaire</SectionTitle>
+          <Card className="p-5">
+            <Checkbox
+              checked={draft.advancedByDefault}
+              onChange={(v) => set('advancedByDefault', v)}
+              label="Ouvrir les demandes en mode avance"
+              hint="Affiche d’emblee le sujet complet, les extensions X.509 et les attributs PKI."
+            />
           </Card>
         </section>
 
@@ -177,7 +224,21 @@ export function SettingsPage() {
                 id="dc"
                 maxLength={2}
                 value={draft.defaults.country}
-                onChange={(e) => setDefault('country', e.target.value)}
+                onChange={(e) => setDefault('country', e.target.value.toUpperCase())}
+              />
+            </Field>
+            <Field label="Region / Etat (ST)" htmlFor="dst">
+              <Input
+                id="dst"
+                value={draft.defaults.state}
+                onChange={(e) => setDefault('state', e.target.value)}
+              />
+            </Field>
+            <Field label="Ville (L)" htmlFor="dl">
+              <Input
+                id="dl"
+                value={draft.defaults.locality}
+                onChange={(e) => setDefault('locality', e.target.value)}
               />
             </Field>
             <Field label="Organisation (O)" htmlFor="do">

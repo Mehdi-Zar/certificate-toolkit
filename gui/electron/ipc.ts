@@ -10,6 +10,7 @@ import { copyFile, mkdir, readFile } from 'node:fs/promises'
 import { basename, join } from 'node:path'
 import type {
   CertEntry,
+  CsrPreview,
   CsrRequest,
   CsrResult,
   OpensslProbe,
@@ -18,7 +19,8 @@ import type {
   Reply,
   Settings,
 } from '../shared/types.ts'
-import { generateCsr, pathsFor } from './csr.ts'
+import { generateCsr, pathsFor, preview } from './csr.ts'
+import { probeCapabilities } from './capabilities.ts'
 import { describeEntry, scanRoot } from './inventory.ts'
 import { Openssl } from './openssl.ts'
 import { listSignedFiles, makePfx } from './pfx.ts'
@@ -51,14 +53,25 @@ export function registerIpc(): void {
 
   handle<OpensslProbe>('openssl:probe', async () => {
     const settings = await loadSettings()
+    const bin = new Openssl(settings.opensslPath)
+    const unavailable = {
+      curves: [] as string[],
+      ed25519: false, ed448: false, rsaPss: false, mldsa: false, sha3: false,
+    }
     try {
-      const version = await new Openssl(settings.opensslPath).version()
-      return { available: true, version, path: settings.opensslPath }
+      const version = await bin.version()
+      return {
+        available: true,
+        version,
+        path: settings.opensslPath,
+        capabilities: await probeCapabilities(bin),
+      }
     } catch (err) {
       return {
         available: false,
         version: err instanceof Error ? err.message : String(err),
         path: settings.opensslPath,
+        capabilities: unavailable,
       }
     }
   })
@@ -78,6 +91,9 @@ export function registerIpc(): void {
   handle<CsrResult>('csr:generate', async (req: CsrRequest) =>
     generateCsr(await ssl(), (await loadSettings()).rootDir, req),
   )
+
+  /** Apercu de la configuration et des controles, sans rien ecrire sur le disque. */
+  handle<CsrPreview>('csr:preview', async (req: CsrRequest) => preview(req))
 
   handle<string>('csr:read', async (fqdn: string) => {
     const p = pathsFor((await loadSettings()).rootDir, fqdn)

@@ -25,8 +25,11 @@ export function defaults(): Settings {
   return {
     rootDir: defaultRoot(),
     opensslPath: process.env.OPENSSL_BIN || 'openssl',
+    advancedByDefault: false,
     defaults: {
       country: process.env.CERT_COUNTRY || 'FR',
+      state: process.env.CERT_STATE || '',
+      locality: process.env.CERT_LOCALITY || '',
       org: process.env.CERT_ORG || 'Ma Societe',
       ou: process.env.CERT_OU || 'SecOps',
       email: process.env.CERT_EMAIL || 'pki@exemple.fr',
@@ -44,6 +47,7 @@ export async function loadSettings(): Promise<Settings> {
     cache = {
       rootDir: saved.rootDir || base.rootDir,
       opensslPath: saved.opensslPath || base.opensslPath,
+      advancedByDefault: saved.advancedByDefault ?? base.advancedByDefault,
       defaults: { ...base.defaults, ...(saved.defaults ?? {}) },
     }
   } catch {
@@ -56,6 +60,7 @@ export async function saveSettings(next: Settings): Promise<Settings> {
   const merged: Settings = {
     rootDir: next.rootDir?.trim() || defaults().rootDir,
     opensslPath: next.opensslPath?.trim() || 'openssl',
+    advancedByDefault: next.advancedByDefault ?? false,
     defaults: { ...defaults().defaults, ...next.defaults },
   }
   const file = FILE()

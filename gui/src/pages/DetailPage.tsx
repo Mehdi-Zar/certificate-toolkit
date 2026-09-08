@@ -80,7 +80,7 @@ export function DetailPage({ fqdn, navigate }: { fqdn: string; navigate: (r: Rou
   if (!entry) {
     return (
       <>
-        <PageHeader title={fqdn} back={<BackLink onClick={() => navigate({ name: 'list' })} />} />
+        <PageHeader title={fqdn} back={<BackLink label="Certificats" onClick={() => navigate({ name: 'list' })} />} />
         <PageBody>
           <Card>
             <EmptyState
@@ -106,7 +106,7 @@ export function DetailPage({ fqdn, navigate }: { fqdn: string; navigate: (r: Rou
           </span>
         }
         description={style.hint}
-        back={<BackLink onClick={() => navigate({ name: 'list' })} />}
+        back={<BackLink label="Certificats" onClick={() => navigate({ name: 'list' })} />}
         actions={
           <Button
             size="sm"

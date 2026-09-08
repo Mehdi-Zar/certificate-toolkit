@@ -16,6 +16,7 @@ import { PageBody, PageHeader } from '../components/PageHeader.tsx'
 import { Badge, Button, Card, EmptyState, ErrorBanner, Input, Spinner, cx } from '../components/ui.tsx'
 import type { Route } from '../App.tsx'
 import { api } from '../lib/api.ts'
+import { getTemplate } from '../../shared/templates.ts'
 import { STATUS, expiryLabel, isoDate, shortDate } from '../lib/format.ts'
 import { useApp } from '../lib/store.tsx'
 
@@ -202,6 +203,7 @@ function EntryRow({ entry, onClick }: { entry: CertEntry; onClick: () => void })
           <Badge tone={style.tone}>{style.label}</Badge>
         </div>
         <p className="mt-0.5 truncate text-[12px] text-subtle">
+          {entry.templateId && getTemplate(entry.templateId).label + ' · '}
           {entry.keyDesc ?? cert?.keyDesc ?? 'cle inconnue'}
           {entry.sans.length > 1 && ' · ' + (entry.sans.length - 1) + ' SAN supplementaire(s)'}
           {entry.status === 'ready-to-assemble' &&
