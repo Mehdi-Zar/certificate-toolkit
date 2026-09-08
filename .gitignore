@@ -31,8 +31,14 @@ Signed/
 .env.*
 !.env.example
 
-# Les dossiers de travail sont couverts par les regles d'extension ci-dessus
-# (cles, certificats, CSR) et par Signed/.
+# Un dossier de travail contient des secrets qu'aucune regle d'extension ne
+# couvre : notes prises a la main, mots de passe releves, exports divers.
+# On exclut donc tout le contenu des dossiers de premier niveau, plutot que de
+# compter sur une liste d'extensions qui ne peut pas etre exhaustive.
+/*/
+!/gui/
+!/docs/
+!/scripts/
 
 # ---------------------------------------------------------------------------
 # Node / Electron
