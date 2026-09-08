@@ -97,7 +97,7 @@ interfaces peuvent travailler sur la meme racine, dans n'importe quel ordre :
 une CSR generee par `generate-csr.sh` s'assemble dans la GUI, et inversement.
 
 Par defaut la racine est celle du depot en developpement, et
-`Documents/CSR-Toolkit` dans une version empaquetee. Elle se change dans
+`<profil utilisateur>/Certificate-Toolkit` dans une version empaquetee. Elle se change dans
 **Reglages**, ou par la variable d'environnement `CERT_HOME`.
 
 ## Architecture

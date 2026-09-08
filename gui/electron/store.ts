@@ -12,13 +12,17 @@ const FILE = () => join(app.getPath('userData'), 'settings.json')
 
 /**
  * En developpement la racine par defaut est celle du depot, pour retrouver
- * les dossiers deja crees par la CLI. En production, un dossier dedie dans
- * les documents de l'utilisateur.
+ * les dossiers deja crees par la CLI.
+ *
+ * En production, un dossier a la racine du profil utilisateur — et surtout pas
+ * « Mes documents » : il est frequemment redirige vers OneDrive ou vers un
+ * partage reseau, ce qui enverrait les cles privees dans le cloud a leur
+ * creation. La racine reste modifiable dans les reglages.
  */
 function defaultRoot(): string {
   if (process.env.CERT_HOME) return process.env.CERT_HOME
   if (!app.isPackaged) return resolve(app.getAppPath(), '..')
-  return join(app.getPath('documents'), 'CSR-Toolkit')
+  return join(app.getPath('home'), 'Certificate-Toolkit')
 }
 
 export function defaults(): Settings {

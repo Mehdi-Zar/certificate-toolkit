@@ -135,7 +135,7 @@ export function SettingsPage() {
             <Field
               label="Racine de travail"
               htmlFor="root"
-              hint="Un sous-dossier par FQDN y est cree. Equivalent de CERT_HOME pour la CLI : les deux interfaces peuvent partager la meme racine."
+              hint="Un sous-dossier par demande y est cree. Equivalent de CERT_HOME pour la CLI : les deux interfaces peuvent partager la meme racine. Evitez un dossier synchronise (OneDrive, Dropbox, partage reseau) : les cles privees y seraient copiees hors du poste."
             >
               <div className="flex gap-2">
                 <Input
