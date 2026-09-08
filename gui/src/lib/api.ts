@@ -1,13 +1,13 @@
-import type { CsrToolkitApi } from '../../electron/preload.ts'
+import type { CertificateToolkitApi } from '../../electron/preload.ts'
 import type { Reply } from '../../shared/types.ts'
 
 declare global {
   interface Window {
-    csrtk: CsrToolkitApi
+    certtk: CertificateToolkitApi
   }
 }
 
-export const api = window.csrtk
+export const api = window.certtk
 
 /**
  * Deballe un Reply<T> : le code appelant travaille sur la valeur, et gere

@@ -58,6 +58,6 @@ const api = {
   },
 }
 
-export type CsrToolkitApi = typeof api
+export type CertificateToolkitApi = typeof api
 
-contextBridge.exposeInMainWorld('csrtk', api)
+contextBridge.exposeInMainWorld('certtk', api)

@@ -61,7 +61,7 @@ function Sidebar({ route, navigate }: { route: Route; navigate: (r: Route) => vo
           <ShieldCheck className="size-4.5" />
         </div>
         <div className="min-w-0">
-          <p className="truncate text-[13px] font-semibold leading-tight">CSR Toolkit</p>
+          <p className="truncate text-[13px] font-semibold leading-tight">Certificate Toolkit</p>
           <p className="truncate text-[11px] text-subtle leading-tight">Certificats X.509</p>
         </div>
       </div>

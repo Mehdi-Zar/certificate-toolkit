@@ -28,8 +28,8 @@ import {
 import { parseMeta, pathsFor } from './csr.ts'
 import type { Openssl } from './openssl.ts'
 
-const PASS_ENV_OUT = 'CSRTK_PFX_PASS'
-const PASS_ENV_IN = 'CSRTK_KEY_PASS'
+const PASS_ENV_OUT = 'CERTTK_PFX_PASS'
+const PASS_ENV_IN = 'CERTTK_KEY_PASS'
 
 /** Inventaire des fichiers deposes par la PKI, pour affichage avant assemblage. */
 export async function listSignedFiles(rootDir: string, fqdn: string): Promise<string[]> {
@@ -205,7 +205,7 @@ export async function makePfx(
     })
   }
 
-  const tmp = await mkdtemp(join(tmpdir(), 'csrtk-'))
+  const tmp = await mkdtemp(join(tmpdir(), 'certtk-'))
   try {
     const leafFile = join(tmp, 'leaf.pem')
     await writeFile(leafFile, leaf.pem, 'utf8')

@@ -22,7 +22,7 @@ import type {
 import { describeKey } from './certs.ts'
 import type { Openssl } from './openssl.ts'
 
-const KEY_PASS_ENV = 'CSRTK_NEW_KEY_PASS'
+const KEY_PASS_ENV = 'CERTTK_NEW_KEY_PASS'
 
 // ---------------------------------------------------------------------------
 // Validation du nom de dossier
@@ -548,7 +548,7 @@ export async function generateCsr(
 
   // 4. Metadonnees, au format lu par make-pfx.sh
   const meta = [
-    '# genere par CSR Toolkit (GUI) le ' + new Date().toISOString(),
+    '# genere par Certificate Toolkit (GUI) le ' + new Date().toISOString(),
     'FQDN="' + req.name + '"',
     'KEY="' + p.key + '"',
     'CSR="' + p.csr + '"',

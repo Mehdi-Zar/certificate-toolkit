@@ -50,7 +50,7 @@ export function installMenu(win: BrowserWindow): void {
       submenu: [
         {
           label: 'Depot du projet',
-          click: () => void shell.openExternal('https://github.com/Mehdi-Zar/csr-toolkit'),
+          click: () => void shell.openExternal('https://github.com/Mehdi-Zar/certificate-toolkit'),
         },
       ],
     },

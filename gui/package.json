@@ -1,8 +1,8 @@
 {
-  "name": "csr-toolkit-gui",
+  "name": "certificate-toolkit-gui",
   "version": "1.0.0",
   "private": true,
-  "description": "Interface graphique pour la generation de CSR et l'assemblage de PFX",
+  "description": "Interface graphique pour le cycle des certificats X.509 : demande, retour PKI, assemblage du PFX",
   "author": "Mehdi-Zar",
   "license": "MIT",
   "main": "dist-electron/main.js",
@@ -34,8 +34,8 @@
     "vite-plugin-electron": "^1.1.2"
   },
   "build": {
-    "appId": "com.mehdizar.csr-toolkit",
-    "productName": "CSR Toolkit",
+    "appId": "com.mehdizar.certificate-toolkit",
+    "productName": "Certificate Toolkit",
     "directories": { "output": "release", "buildResources": "build" },
     "files": ["dist/**", "dist-electron/**"],
     "win": { "target": ["nsis", "portable"] },

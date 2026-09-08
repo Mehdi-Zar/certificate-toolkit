@@ -1,4 +1,4 @@
-# CSR Toolkit — interface graphique
+# Certificate Toolkit — interface graphique
 
 Application de bureau qui couvre le meme flux que les scripts de la racine :
 generer une cle privee et sa CSR, suivre la demande, puis assembler le PFX

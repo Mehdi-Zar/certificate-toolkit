@@ -1,4 +1,4 @@
-# CSR Toolkit
+# Certificate Toolkit
 
 Outillage pour le cycle de vie des certificats X.509 : generation de la **cle privee + CSR**,
 puis assemblage du **PKCS#12 (.pfx)** une fois la demande signee par la PKI.

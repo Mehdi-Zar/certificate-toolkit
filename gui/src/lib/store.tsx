@@ -81,7 +81,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
 export type Theme = 'system' | 'light' | 'dark'
 
-const THEME_KEY = 'csrtk.theme'
+const THEME_KEY = 'certtk.theme'
 
 export function useTheme(): [Theme, (t: Theme) => void] {
   const [theme, setTheme] = useState<Theme>(() => {
