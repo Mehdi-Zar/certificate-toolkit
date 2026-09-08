@@ -1,0 +1,20 @@
+# Normalisation par defaut
+* text=auto eol=lf
+
+# Les scripts shell DOIVENT rester en LF : un CRLF casse le shebang
+# ("bash: \r: command not found") sur Linux comme dans Git Bash.
+*.sh            text eol=lf
+CSR_Template    text eol=lf
+
+# Scripts Windows : CRLF
+*.bat           text eol=crlf
+*.cmd           text eol=crlf
+*.ps1           text eol=crlf
+
+# Binaires / materiel crypto : jamais de conversion de fin de ligne
+*.pfx           binary
+*.p12           binary
+*.der           binary
+*.p7b           binary
+*.png           binary
+*.ico           binary
