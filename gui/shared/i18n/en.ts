@@ -709,4 +709,114 @@ export const en: Record<MessageKey, string> = {
   'san.RID': 'Registered OID',
   'san.otherName': 'Other (OID)',
   'san.fromCn': 'from the CN',
+
+  'settings.opensslBundled': 'Shipped with the application',
+  'settings.opensslSystem': 'Installed on this machine',
+  'settings.opensslBundledHelp':
+    'The application ships its own copy of OpenSSL so it depends on nothing else. Leave "openssl" to use it; give a full path only if your organisation mandates a specific binary.',
+
+  // -------------------------------------------------------------------------
+  // Getting started wizard
+  // -------------------------------------------------------------------------
+  'wizard.reopen': 'How it works',
+  'wizard.step': 'Step {n} of {total}',
+  'wizard.next': 'Next',
+  'wizard.back': 'Back',
+  'wizard.skip': 'Skip',
+  'wizard.start': 'Get started',
+  'wizard.close': 'Close',
+
+  'wizard.welcome.title': 'Getting a certificate, end to end',
+  'wizard.welcome.body':
+    'A certificate is not downloaded: you request one, an authority signs it, then you recombine it with your private key. This guide covers those three moments in about a minute. You can reopen it any time from the left bar.',
+  'wizard.welcome.note':
+    'Nothing leaves this machine. The application makes no network request: you send the request to your authority yourself, through your usual channel.',
+
+  'wizard.folder.title': 'Where do you want to work?',
+  'wizard.folder.body':
+    'Each request gets its own folder here: the private key, the request, the authority response and the final certificate. This is the only place the application writes to.',
+  'wizard.folder.warn':
+    'Avoid a synchronised folder (OneDrive, Dropbox, network share). A private key would be copied off the machine as soon as it is created.',
+  'wizard.folder.current': 'Selected folder',
+  'wizard.folder.choose': 'Choose a folder',
+
+  'wizard.flow.title': 'Three moments, with a wait in the middle',
+  'wizard.flow.body':
+    'The second step is out of your hands: it happens at the certificate authority, and can take minutes or days. The application keeps track of your pending requests.',
+  'wizard.flow.s1': 'You create the request',
+  'wizard.flow.s1d':
+    'The application generates a private key, which stays here, and a signing request (CSR) that carries only its public half.',
+  'wizard.flow.s2': 'The authority signs',
+  'wizard.flow.s2d':
+    'You send the .csr file to your authority, through its portal or a ticket. It sends back a signed certificate.',
+  'wizard.flow.s3': 'You assemble',
+  'wizard.flow.s3d':
+    'You drop the response into the application, which recombines it with the private key kept here to produce files a server can load.',
+
+  'wizard.create.title': 'What you create, and what leaves',
+  'wizard.create.body':
+    'Start by picking what the certificate is for: website, smart card, code signing. The matching X.509 extensions are filled in, and checks flag anything an authority would reject.',
+  'wizard.create.keep': 'Stays on this machine',
+  'wizard.create.keepDesc':
+    'The private key (.key.pem). It must never be sent: whoever holds it can impersonate you.',
+  'wizard.create.send': 'Goes to the authority',
+  'wizard.create.sendDesc':
+    'The request (.csr). It carries your identity and the public key, nothing secret. Paste it into a portal or attach the file.',
+
+  'wizard.assemble.title': 'Where everything comes back together',
+  'wizard.assemble.body':
+    'This is the step people misread the first time. The certificate the authority returns holds only the public half: on its own it is useless. It has to be reunited with the private key kept on this machine.',
+  'wizard.assemble.how':
+    'Drag the files you received onto the matching request, and the application does the rest: it finds the right certificate by comparing keys, rebuilds the chain up to the root authority, checks dates and names, then produces the final container.',
+  'wizard.assemble.formats': 'Every response format is accepted: PEM, CRT, CER, DER, P7B.',
+
+  'wizard.formats.title': 'What you end up with',
+  'wizard.formats.body':
+    'One certificate comes in several shapes depending on the server that reads it. The application produces them all at once.',
+  'wizard.done.title': 'You are ready',
+  'wizard.done.body':
+    'Create your first request, or go to the list if your working folder already holds some.',
+  'wizard.done.action': 'Create a request',
+
+  // -------------------------------------------------------------------------
+  // Output formats
+  // -------------------------------------------------------------------------
+  'formats.title': 'Which file for which server?',
+  'formats.help':
+    'The same certificate, packaged differently. Take the row that matches your server and ignore the rest.',
+  'formats.pfx.who': 'Windows, IIS, Exchange, Java, Tomcat',
+  'formats.pfx.what':
+    'The PKCS#12 container: certificate, chain and private key in one password-protected file.',
+  'formats.fullchain.who': 'nginx, HAProxy, Traefik',
+  'formats.fullchain.what':
+    'The certificate followed by its chain, to be given alongside the private key as a separate file.',
+  'formats.crt.who': 'Apache, Postfix, Dovecot',
+  'formats.crt.what':
+    'The certificate on its own. These servers want the chain in a separate directive.',
+  'formats.chain.who': 'Authority chain',
+  'formats.chain.what':
+    'The intermediate certificates, without yours. Reference it where the server asks for it.',
+  'formats.key.who': 'Private key',
+  'formats.key.what':
+    'Needed next to the certificate for nginx and Apache. Already inside the PFX.',
+
+  // -------------------------------------------------------------------------
+  // Request progress
+  // -------------------------------------------------------------------------
+  'flow.title': 'Where this request stands',
+  'flow.s1': 'Request created',
+  'flow.s2': 'Sent to the authority',
+  'flow.s3': 'Response received',
+  'flow.s4': 'Certificate ready',
+  'flow.todo': 'What to do now',
+  'flow.todo.send':
+    'Send the .csr file to your certificate authority, then come back here once it has answered.',
+  'flow.todo.drop': 'Drop the files the authority returned into step 2 below.',
+  'flow.todo.assemble':
+    'The files are here. Assemble the final certificate at step 3: choose a password and run it.',
+  'flow.todo.done': 'The certificate is ready. Take the format your server needs.',
+  'flow.todo.broken':
+    'The private key is missing from this folder. Without it the certificate cannot be assembled.',
+  'detail.step3Explain':
+    'The certificate returned by the authority holds only the public half. Assembly recombines it with the private key kept on this machine, adds the chain, and produces a file a server can load.',
 }

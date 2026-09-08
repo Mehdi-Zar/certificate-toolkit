@@ -11,9 +11,10 @@
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
-    "pack": "npm run build && electron-builder --dir",
-    "dist": "npm run build && electron-builder",
-    "typecheck": "tsc --noEmit"
+    "pack": "npm run bundle:openssl && npm run build && electron-builder --dir",
+    "dist": "npm run bundle:openssl && npm run build && electron-builder",
+    "typecheck": "tsc --noEmit",
+    "bundle:openssl": "node scripts/bundle-openssl.mjs"
   },
   "dependencies": {
     "lucide-react": "^1.42.0",
@@ -36,11 +37,42 @@
   "build": {
     "appId": "com.mehdizar.certificate-toolkit",
     "productName": "Certificate Toolkit",
-    "directories": { "output": "release", "buildResources": "build" },
-    "files": ["dist/**", "dist-electron/**"],
-    "win": { "target": ["nsis", "portable"] },
-    "mac": { "target": ["dmg"], "category": "public.app-category.developer-tools" },
-    "linux": { "target": ["AppImage", "deb"], "category": "Development" },
-    "nsis": { "oneClick": false, "allowToChangeInstallationDirectory": true }
+    "directories": {
+      "output": "release",
+      "buildResources": "build"
+    },
+    "files": [
+      "dist/**",
+      "dist-electron/**"
+    ],
+    "win": {
+      "target": [
+        "nsis",
+        "portable"
+      ]
+    },
+    "mac": {
+      "target": [
+        "dmg"
+      ],
+      "category": "public.app-category.developer-tools"
+    },
+    "linux": {
+      "target": [
+        "AppImage",
+        "deb"
+      ],
+      "category": "Development"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    },
+    "extraResources": [
+      {
+        "from": "vendor/openssl",
+        "to": "openssl"
+      }
+    ]
   }
 }

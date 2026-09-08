@@ -23,6 +23,7 @@ import { translator, type Translate } from '../shared/i18n/index.ts'
 import { generateCsr, pathsFor, preview } from './csr.ts'
 import { buildMenu } from './menu.ts'
 import { probeCapabilities } from './capabilities.ts'
+import { resolveOpenssl } from './openssl-path.ts'
 import { describeEntry, scanRoot } from './inventory.ts'
 import { Openssl } from './openssl.ts'
 import { listSignedFiles, makePfx } from './pfx.ts'
@@ -46,7 +47,7 @@ const lang = async (): Promise<Translate> => translator((await loadSettings()).l
 
 const ssl = async (): Promise<Openssl> => {
   const settings = await loadSettings()
-  return new Openssl(settings.opensslPath, translator(settings.language))
+  return new Openssl(resolveOpenssl(settings).path, translator(settings.language))
 }
 
 const focused = (): BrowserWindow | null =>
@@ -66,7 +67,8 @@ export function registerIpc(): void {
 
   handle<OpensslProbe>('openssl:probe', async () => {
     const settings = await loadSettings()
-    const bin = new Openssl(settings.opensslPath, translator(settings.language))
+    const chosen = resolveOpenssl(settings)
+    const bin = new Openssl(chosen.path, translator(settings.language))
     const unavailable = {
       curves: [] as string[],
       ed25519: false, ed448: false, rsaPss: false, mldsa: false, sha3: false,
@@ -76,14 +78,16 @@ export function registerIpc(): void {
       return {
         available: true,
         version,
-        path: settings.opensslPath,
+        path: chosen.path,
+        bundled: chosen.bundled,
         capabilities: await probeCapabilities(bin),
       }
     } catch (err) {
       return {
         available: false,
         version: err instanceof Error ? err.message : String(err),
-        path: settings.opensslPath,
+        path: chosen.path,
+        bundled: chosen.bundled,
         capabilities: unavailable,
       }
     }

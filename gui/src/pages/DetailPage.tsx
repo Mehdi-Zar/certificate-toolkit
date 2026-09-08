@@ -21,6 +21,8 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import type { DragEvent } from 'react'
 import type { CertEntry, CertInfo, Check as CheckResult, PfxResult } from '../../shared/types.ts'
 import type { Route } from '../App.tsx'
+import { FlowStepper } from '../components/FlowStepper.tsx'
+import { FormatTable } from '../components/FormatTable.tsx'
 import { PageBody, PageHeader } from '../components/PageHeader.tsx'
 import { useToast } from '../components/Toast.tsx'
 import {
@@ -52,6 +54,31 @@ import {
 } from '../lib/format.ts'
 import { useApp, useT } from '../lib/store.tsx'
 import { BackLink } from './NewRequestPage.tsx'
+
+/**
+ * Les fichiers d'une demande deja assemblee. Sans ce bloc, quelqu'un qui
+ * revient le lendemain ne retrouve plus ce qu'il doit donner a son serveur.
+ */
+function ExistingFiles({ entry, t }: { entry: CertEntry; t: Translate }) {
+  const base = entry.dir + '/' + entry.fqdn
+  return (
+    <section>
+      <SectionTitle help={t('formats.help')}>{t('formats.title')}</SectionTitle>
+      <Card className="p-5">
+        <FormatTable
+          t={t}
+          paths={{
+            pfx: base + '.pfx',
+            fullchain: base + '.fullchain.pem',
+            crt: base + '.crt.pem',
+            chain: base + '.chain.pem',
+            key: base + '.key.pem',
+          }}
+        />
+      </Card>
+    </section>
+  )
+}
 
 export function DetailPage({ fqdn, navigate }: { fqdn: string; navigate: (r: Route) => void }) {
   const { refresh, settings } = useApp()
@@ -134,11 +161,15 @@ export function DetailPage({ fqdn, navigate }: { fqdn: string; navigate: (r: Rou
       <PageBody>
         {error && <ErrorBanner>{error}</ErrorBanner>}
 
+        <FlowStepper status={entry.status} t={t} />
+
         {entry.cert && <IssuedCert cert={entry.cert} t={t} lang={lang} />}
 
         <StepCsr entry={entry} />
         <StepSigned entry={entry} onChange={afterWrite} />
         <StepPfx entry={entry} onDone={afterWrite} />
+
+        {entry.hasPfx && <ExistingFiles entry={entry} t={t} />}
       </PageBody>
     </>
   )
@@ -465,7 +496,11 @@ function StepPfx({ entry, onDone }: { entry: CertEntry; onDone: () => Promise<vo
 
   return (
     <section>
-      <SectionTitle>{t('detail.step3')}</SectionTitle>
+      <SectionTitle help={t('detail.step3Explain')}>{t('detail.step3')}</SectionTitle>
+
+      {ready && (
+        <p className="mb-3 text-[13px] leading-relaxed text-muted">{t('detail.step3Explain')}</p>
+      )}
 
       {!ready ? (
         <Card>
@@ -659,17 +694,17 @@ function PfxOutcome({ result, t }: { result: PfxResult; t: Translate }) {
       </Card>
 
       <Card className="p-5">
-        <h3 className="mb-3 font-medium">{t('detail.filesTitle')}</h3>
-        <div className="flex flex-col gap-1">
-          <FileLine path={result.pfxPath} label={t('detail.filePfx')} t={t} primary />
-          <FileLine path={result.crtPath} label={t('detail.fileCrt')} t={t} />
-          {result.chainPath && (
-            <FileLine path={result.chainPath} label={t('detail.fileChain')} t={t} />
-          )}
-          {result.fullchainPath && (
-            <FileLine path={result.fullchainPath} label={t('detail.fileFullchain')} t={t} />
-          )}
-        </div>
+        <h3 className="mb-1 flex items-center gap-1.5 font-medium">{t('formats.title')}</h3>
+        <p className="mb-3 text-[12px] leading-relaxed text-subtle">{t('formats.help')}</p>
+        <FormatTable
+          t={t}
+          paths={{
+            pfx: result.pfxPath,
+            fullchain: result.fullchainPath,
+            crt: result.crtPath,
+            chain: result.chainPath,
+          }}
+        />
 
         <div className="mt-4 border-t border-line pt-4">
           <p className="mb-1.5 text-[12px] text-subtle">{t('detail.importWindows')}</p>
@@ -719,42 +754,5 @@ function CheckLine({ check }: { check: CheckResult }) {
         )}
       </span>
     </li>
-  )
-}
-
-function FileLine({
-  path,
-  label,
-  primary,
-  t,
-}: {
-  path: string
-  label: string
-  primary?: boolean
-  t: Translate
-}) {
-  return (
-    <div
-      className={cx(
-        'flex items-center gap-3 rounded-lg px-3 py-2',
-        primary ? 'bg-accent-soft' : 'hover:bg-inset',
-      )}
-    >
-      <Package className={cx('size-4 shrink-0', primary ? 'text-accent' : 'text-subtle')} />
-      <div className="min-w-0 flex-1">
-        <p className={cx('truncate text-[13px] selectable', primary && 'font-medium')}>
-          {basename(path)}
-        </p>
-        <p className="truncate text-[11px] text-subtle">{label}</p>
-      </div>
-      <button
-        onClick={() => void api.system.reveal(path)}
-        title={t('common.reveal')}
-        aria-label={t('common.reveal')}
-        className="shrink-0 rounded p-1 text-subtle transition-colors hover:text-ink"
-      >
-        <FolderOpen className="size-3.5" />
-      </button>
-    </div>
   )
 }

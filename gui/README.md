@@ -80,7 +80,9 @@ npm install
 npm run dev
 ```
 
-OpenSSL doit etre dans le `PATH` ; sinon, indiquez son chemin dans **Reglages**.
+En developpement, OpenSSL doit etre joignable : soit dans le `PATH`, soit via
+`npm run bundle:openssl` qui en depose une copie dans `vendor/`. Une version
+empaquetee, elle, embarque toujours la sienne.
 
 | Commande | Effet |
 |---|---|
@@ -88,6 +90,7 @@ OpenSSL doit etre dans le `PATH` ; sinon, indiquez son chemin dans **Reglages**.
 | `npm run typecheck` | Verification TypeScript seule |
 | `npm run build` | Typecheck + bundles de production dans `dist/` et `dist-electron/` |
 | `npm run pack` | Application non empaquetee dans `release/` (test rapide) |
+| `npm run bundle:openssl` | Prepare la copie d'OpenSSL embarquee dans `vendor/` |
 | `npm run dist` | Installateurs : NSIS + portable (Windows), DMG (macOS), AppImage + deb (Linux) |
 
 ## Racine de travail
@@ -99,6 +102,38 @@ une CSR generee par `generate-csr.sh` s'assemble dans la GUI, et inversement.
 Par defaut la racine est celle du depot en developpement, et
 `<profil utilisateur>/Certificate-Toolkit` dans une version empaquetee. Elle se change dans
 **Reglages**, ou par la variable d'environnement `CERT_HOME`.
+
+## OpenSSL embarque
+
+L'application ne depend d'aucun OpenSSL installe sur le poste : `npm run dist`
+copie l'executable et ses deux bibliotheques dans le paquet, apres avoir
+verifie que la copie fonctionne avec un `PATH` reduit aux DLL systeme.
+
+C'est ce qui rend l'installation utilisable telle quelle. C'est aussi ce qui
+rend la version previsible : sur la machine de developpement, le `PATH` Windows
+exposait OpenSSL 3.1 la ou Git Bash exposait 3.5, et 3.1 ne connait ni ML-DSA
+ni SHA-3.
+
+Un chemin saisi dans les reglages l'emporte toujours, pour une organisation qui
+impose son propre binaire. Sinon la copie embarquee est prise, et le `PATH` ne
+sert plus que de dernier recours.
+
+Les binaires vivent dans `vendor/`, qui n'est pas versionne. La copie est
+accompagnee de sa licence (OpenSSL 3 est sous Apache 2.0) et d'un fichier
+`NOTICE.txt` qui note l'origine et la version.
+
+## Assistant de demarrage
+
+Au premier lancement, un assistant en six ecrans explique le parcours complet :
+ce qui est cree, ce qui part chez l'autorite, ce qui revient, et ce qu'on
+obtient a la fin. Son deuxieme ecran fait choisir le dossier de travail, parce
+que c'est la premiere decision a prendre. Il se rouvre depuis la barre laterale.
+
+Le detail d'une demande porte le meme souci : un bandeau situe la demande dans
+le parcours et enonce la seule chose a faire maintenant, et l'assemblage
+explique qu'il recombine le certificat signe avec la cle privee restee sur le
+poste. Une fois le PFX produit, une table dit quel fichier donner a quel
+serveur.
 
 ## Architecture
 

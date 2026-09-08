@@ -62,3 +62,7 @@ Desktop.ini
 gui/dist/
 gui/dist-electron/
 gui/release/
+
+# Binaires OpenSSL embarques : produits par scripts/bundle-openssl.mjs,
+# jamais versionnes.
+gui/vendor/

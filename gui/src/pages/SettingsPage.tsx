@@ -165,7 +165,7 @@ export function SettingsPage() {
               label={t('settings.opensslPath')}
               htmlFor="ssl"
               hint={t('settings.opensslPathHint')}
-              help={t('settings.opensslPathHelp')}
+              help={t('settings.opensslBundledHelp')}
             >
               <Input
                 id="ssl"
@@ -194,6 +194,11 @@ export function SettingsPage() {
                     {probe.available ? t('settings.opensslDetected') : t('openssl.notFound')}
                   </p>
                   <p className="mt-0.5 break-words opacity-90 selectable">{probe.version}</p>
+                  <p className="mt-1 text-[12px] opacity-75">
+                    {probe.bundled ? t('settings.opensslBundled') : t('settings.opensslSystem')}
+                    {' · '}
+                    <span className="selectable">{probe.path}</span>
+                  </p>
                 </div>
                 <Button
                   size="sm"

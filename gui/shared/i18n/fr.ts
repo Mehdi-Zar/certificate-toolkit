@@ -718,6 +718,117 @@ export const fr = {
   'san.RID': 'OID enregistré',
   'san.otherName': 'Autre (OID)',
   'san.fromCn': 'depuis le CN',
+
+  'settings.opensslBundled': 'Version livrée avec l’application',
+  'settings.opensslSystem': 'Version installée sur le poste',
+  'settings.opensslBundledHelp':
+    'L’application embarque sa propre copie d’OpenSSL, pour ne dépendre de rien sur le poste. Laissez « openssl » pour l’utiliser ; indiquez un chemin complet seulement si votre organisation impose un binaire précis.',
+
+  // -------------------------------------------------------------------------
+  // Assistant de demarrage
+  // -------------------------------------------------------------------------
+  'wizard.reopen': 'Comment ça marche ?',
+  'wizard.step': 'Étape {n} sur {total}',
+  'wizard.next': 'Suivant',
+  'wizard.back': 'Précédent',
+  'wizard.skip': 'Passer',
+  'wizard.start': 'Commencer',
+  'wizard.close': 'Fermer',
+
+  'wizard.welcome.title': 'Obtenir un certificat, de bout en bout',
+  'wizard.welcome.body':
+    'Un certificat ne se télécharge pas : on le demande, une autorité le signe, puis on le recombine avec sa clé privée. Cet assistant explique ces trois temps en une minute. Vous pourrez le rouvrir à tout moment depuis la barre de gauche.',
+  'wizard.welcome.note':
+    'Rien ne sort de ce poste. L’application ne fait aucune requête réseau : c’est vous qui transmettez la demande à votre autorité, par le canal habituel.',
+
+  'wizard.folder.title': 'Où voulez-vous travailler ?',
+  'wizard.folder.body':
+    'Chaque demande aura son propre dossier ici : la clé privée, la demande, la réponse de l’autorité et le certificat final. C’est le seul endroit où l’application écrit.',
+  'wizard.folder.warn':
+    'Évitez un dossier synchronisé (OneDrive, Dropbox, partage réseau). Une clé privée y serait copiée hors du poste dès sa création.',
+  'wizard.folder.current': 'Dossier retenu',
+  'wizard.folder.choose': 'Choisir un dossier',
+
+  'wizard.flow.title': 'Trois temps, et une attente au milieu',
+  'wizard.flow.body':
+    'La deuxième étape ne dépend pas de vous : elle se passe chez l’autorité de certification, et peut prendre de quelques minutes à plusieurs jours. L’application garde la trace de vos demandes en attente.',
+  'wizard.flow.s1': 'Vous créez la demande',
+  'wizard.flow.s1d':
+    'L’application génère une clé privée, qui reste ici, et une demande de signature (CSR) qui n’en contient que la partie publique.',
+  'wizard.flow.s2': 'L’autorité signe',
+  'wizard.flow.s2d':
+    'Vous envoyez le fichier .csr à votre autorité, par son portail ou par ticket. Elle vous renvoie un certificat signé.',
+  'wizard.flow.s3': 'Vous assemblez',
+  'wizard.flow.s3d':
+    'Vous déposez la réponse dans l’application, qui la recombine avec la clé privée gardée ici pour produire les fichiers utilisables par un serveur.',
+
+  'wizard.create.title': 'Ce que vous créez, et ce qui part',
+  'wizard.create.body':
+    'Choisissez d’abord l’usage du certificat : site web, carte à puce, signature de code. Les extensions X.509 correspondantes sont pré-remplies, et des contrôles signalent ce qu’une autorité refuserait.',
+  'wizard.create.keep': 'Reste sur ce poste',
+  'wizard.create.keepDesc':
+    'La clé privée (.key.pem). Elle ne doit jamais être transmise : quiconque la détient peut se faire passer pour vous.',
+  'wizard.create.send': 'Part chez l’autorité',
+  'wizard.create.sendDesc':
+    'La demande (.csr). Elle contient votre identité et la clé publique, rien de secret. Vous pouvez la copier dans un portail ou joindre le fichier.',
+
+  'wizard.assemble.title': 'Le moment où tout se recolle',
+  'wizard.assemble.body':
+    'C’est l’étape que l’on comprend mal la première fois. Le certificat renvoyé par l’autorité ne contient que la partie publique : seul, il ne sert à rien. Il faut le réunir avec la clé privée restée sur ce poste.',
+  'wizard.assemble.how':
+    'Vous glissez le ou les fichiers reçus dans la demande concernée, et l’application fait le reste : elle retrouve le bon certificat en comparant les clés, reconstruit la chaîne jusqu’à l’autorité racine, vérifie les dates et les noms, puis produit le conteneur final.',
+  'wizard.assemble.formats': 'Tous les formats de retour sont acceptés : PEM, CRT, CER, DER, P7B.',
+
+  'wizard.formats.title': 'Ce que vous obtenez à la fin',
+  'wizard.formats.body':
+    'Un même certificat se présente sous plusieurs formes selon le serveur qui doit le lire. L’application les produit toutes en une fois.',
+  'wizard.done.title': 'Vous pouvez commencer',
+  'wizard.done.body':
+    'Créez votre première demande, ou revenez à la liste si des dossiers existent déjà dans votre dossier de travail.',
+  'wizard.done.action': 'Créer une demande',
+
+  // -------------------------------------------------------------------------
+  // Formats de sortie
+  // -------------------------------------------------------------------------
+  'formats.title': 'Quel fichier pour quel serveur ?',
+  'formats.help':
+    'Le même certificat, empaqueté différemment. Prenez la ligne qui correspond à votre serveur, ignorez les autres.',
+  'formats.pfx.who': 'Windows, IIS, Exchange, Java, Tomcat',
+  'formats.pfx.what':
+    'Le conteneur PKCS#12 : certificat, chaîne et clé privée dans un seul fichier protégé par mot de passe.',
+  'formats.fullchain.who': 'nginx, HAProxy, Traefik',
+  'formats.fullchain.what':
+    'Le certificat suivi de sa chaîne, à donner avec la clé privée en fichier séparé.',
+  'formats.crt.who': 'Apache, Postfix, Dovecot',
+  'formats.crt.what':
+    'Le certificat seul. Ces serveurs veulent la chaîne dans une directive distincte.',
+  'formats.chain.who': 'Chaîne de l’autorité',
+  'formats.chain.what':
+    'Les certificats intermédiaires, sans le vôtre. À référencer là où le serveur le demande.',
+  'formats.key.who': 'Clé privée',
+  'formats.key.what':
+    'Nécessaire à côté du certificat pour nginx et Apache. Déjà incluse dans le PFX.',
+
+  // -------------------------------------------------------------------------
+  // Progression d'une demande
+  // -------------------------------------------------------------------------
+  'flow.title': 'Où en est cette demande',
+  'flow.s1': 'Demande créée',
+  'flow.s2': 'Envoi à l’autorité',
+  'flow.s3': 'Réponse reçue',
+  'flow.s4': 'Certificat prêt',
+  'flow.todo': 'À faire maintenant',
+  'flow.todo.send':
+    'Envoyez le fichier .csr à votre autorité de certification, puis revenez ici quand elle aura répondu.',
+  'flow.todo.drop':
+    'Déposez le ou les fichiers renvoyés par l’autorité dans l’étape 2 ci-dessous.',
+  'flow.todo.assemble':
+    'Les fichiers sont là. Assemblez le certificat final à l’étape 3 : choisissez un mot de passe et lancez.',
+  'flow.todo.done': 'Le certificat est prêt. Récupérez le format adapté à votre serveur.',
+  'flow.todo.broken':
+    'La clé privée manque dans ce dossier. Sans elle, le certificat ne peut pas être assemblé.',
+  'detail.step3Explain':
+    'Le certificat renvoyé par l’autorité ne contient que la partie publique. L’assemblage le recombine avec la clé privée restée sur ce poste, et y ajoute la chaîne, pour produire un fichier qu’un serveur sait charger.',
 } as const
 
 export type MessageKey = keyof typeof fr

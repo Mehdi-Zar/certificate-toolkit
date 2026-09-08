@@ -33,6 +33,7 @@ export function defaults(): Settings {
     // Au premier lancement seulement : ensuite, le choix enregistre l'emporte.
     language: detectLang(app.getLocale() || 'en'),
     advancedByDefault: false,
+    onboarded: false,
     defaults: {
       country: process.env.CERT_COUNTRY || 'FR',
       state: process.env.CERT_STATE || '',
@@ -56,6 +57,7 @@ export async function loadSettings(): Promise<Settings> {
       opensslPath: saved.opensslPath || base.opensslPath,
       language: isLang(saved.language) ? saved.language : base.language,
       advancedByDefault: saved.advancedByDefault ?? base.advancedByDefault,
+      onboarded: saved.onboarded ?? base.onboarded,
       defaults: { ...base.defaults, ...(saved.defaults ?? {}) },
     }
   } catch {
@@ -70,6 +72,7 @@ export async function saveSettings(next: Settings): Promise<Settings> {
     opensslPath: next.opensslPath?.trim() || 'openssl',
     language: isLang(next.language) ? next.language : defaults().language,
     advancedByDefault: next.advancedByDefault ?? false,
+    onboarded: next.onboarded ?? false,
     defaults: { ...defaults().defaults, ...next.defaults },
   }
   const file = FILE()

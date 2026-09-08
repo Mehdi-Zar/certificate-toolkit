@@ -19,6 +19,8 @@ export interface Settings {
   defaults: SubjectDefaults
   /** Affiche d'emblee les options avancees dans le formulaire. */
   advancedByDefault: boolean
+  /** Faux tant que l'assistant de demarrage n'a pas ete parcouru. */
+  onboarded: boolean
 }
 
 export interface SubjectDefaults {
@@ -306,6 +308,8 @@ export interface OpensslProbe {
   available: boolean
   version: string
   path: string
+  /** Vrai quand c'est la copie livree avec l'application. */
+  bundled: boolean
   /** Ce que ce binaire sait faire : conditionne les choix offerts. */
   capabilities: Capabilities
 }

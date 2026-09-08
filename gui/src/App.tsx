@@ -1,6 +1,7 @@
 import {
   AlertTriangle,
   FilePlus2,
+  LifeBuoy,
   Monitor,
   Moon,
   ShieldCheck,
@@ -9,6 +10,7 @@ import {
 } from 'lucide-react'
 import { useState } from 'react'
 import type { ReactNode } from 'react'
+import { Onboarding } from './components/Onboarding.tsx'
 import { cx } from './components/ui.tsx'
 import { useApp, useT, useTheme, type Theme } from './lib/store.tsx'
 import { CertificatesPage } from './pages/CertificatesPage.tsx'
@@ -24,11 +26,20 @@ export type Route =
 
 export default function App() {
   const [route, navigate] = useState<Route>({ name: 'list' })
-  const { probe, loading } = useApp()
+  const { probe, loading, settings } = useApp()
+  const [wizard, setWizard] = useState(false)
+
+  // Au premier lancement, l'assistant s'ouvre avant tout le reste : c'est la
+  // qu'on choisit son dossier de travail.
+  const firstRun = settings !== null && !settings.onboarded
 
   return (
     <div className="flex h-full bg-canvas text-ink">
-      <Sidebar route={route} navigate={navigate} />
+      {(wizard || firstRun) && (
+        <Onboarding onClose={() => setWizard(false)} onCreate={() => navigate({ name: 'new' })} />
+      )}
+
+      <Sidebar route={route} navigate={navigate} onWizard={() => setWizard(true)} />
 
       <main className="min-w-0 flex-1 overflow-y-auto">
         {probe && !probe.available && !loading && <OpensslWarning onFix={() => navigate({ name: 'settings' })} />}
@@ -48,7 +59,15 @@ const routeKey = (r: Route): string => (r.name === 'detail' ? 'detail:' + r.fqdn
 
 // ---------------------------------------------------------------------------
 
-function Sidebar({ route, navigate }: { route: Route; navigate: (r: Route) => void }) {
+function Sidebar({
+  route,
+  navigate,
+  onWizard,
+}: {
+  route: Route
+  navigate: (r: Route) => void
+  onWizard: () => void
+}) {
   const { entries } = useApp()
   const t = useT()
   const actionable = entries.filter(
@@ -93,6 +112,13 @@ function Sidebar({ route, navigate }: { route: Route; navigate: (r: Route) => vo
       </nav>
 
       <div className="mt-auto p-3">
+        <button
+          onClick={onWizard}
+          className="mb-2 flex h-9 w-full items-center gap-2.5 rounded-lg px-2.5 text-[13px] font-medium text-muted transition-colors hover:bg-inset hover:text-ink"
+        >
+          <LifeBuoy className="size-4" />
+          <span className="flex-1 text-left">{t('wizard.reopen')}</span>
+        </button>
         <ThemeToggle />
         <OpensslStatus />
       </div>
