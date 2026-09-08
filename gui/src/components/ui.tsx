@@ -3,6 +3,7 @@
  * que trois ecrans, une bibliotheque complete ne se justifierait pas.
  */
 import { Loader2 } from 'lucide-react'
+import { Hint } from './Hint.tsx'
 import type {
   ButtonHTMLAttributes,
   InputHTMLAttributes,
@@ -76,18 +77,22 @@ export function Button({
 
 interface FieldProps {
   label: string
+  /** Ligne courte sous le champ. */
   hint?: ReactNode
+  /** Explication longue, dans une infobulle accolee au libelle. */
+  help?: string
   error?: string | null
   htmlFor?: string
   children: ReactNode
   className?: string
 }
 
-export function Field({ label, hint, error, htmlFor, children, className }: FieldProps) {
+export function Field({ label, hint, help, error, htmlFor, children, className }: FieldProps) {
   return (
     <div className={cx('flex flex-col gap-1.5', className)}>
-      <label htmlFor={htmlFor} className="text-[13px] font-medium text-ink">
+      <label htmlFor={htmlFor} className="flex items-center gap-1.5 text-[13px] font-medium text-ink">
         {label}
+        {help && <Hint text={help} label={label} />}
       </label>
       {children}
       {error ? (
@@ -125,11 +130,21 @@ interface CheckProps {
   onChange: (v: boolean) => void
   label: string
   hint?: string
+  /** Explication longue, dans une infobulle accolee au libelle. */
+  help?: string
   tone?: 'default' | 'danger'
   disabled?: boolean
 }
 
-export function Check({ checked, onChange, label, hint, tone = 'default', disabled }: CheckProps) {
+export function Check({
+  checked,
+  onChange,
+  label,
+  hint,
+  help,
+  tone = 'default',
+  disabled,
+}: CheckProps) {
   return (
     <label
       className={cx(
@@ -150,11 +165,12 @@ export function Check({ checked, onChange, label, hint, tone = 'default', disabl
       <span className="min-w-0">
         <span
           className={cx(
-            'block text-[13px] font-medium',
+            'flex items-center gap-1.5 text-[13px] font-medium',
             tone === 'danger' ? 'text-danger' : 'text-ink',
           )}
         >
           {label}
+          {help && <Hint text={help} label={label} />}
         </span>
         {hint && <span className="block text-[12px] text-subtle leading-relaxed">{hint}</span>}
       </span>
@@ -181,11 +197,20 @@ export function Card({
   )
 }
 
-export function SectionTitle({ children, aside }: { children: ReactNode; aside?: ReactNode }) {
+export function SectionTitle({
+  children,
+  aside,
+  help,
+}: {
+  children: ReactNode
+  aside?: ReactNode
+  help?: string
+}) {
   return (
     <div className="flex items-center justify-between gap-4 mb-3">
-      <h2 className="text-[12px] font-semibold uppercase tracking-[0.07em] text-subtle">
+      <h2 className="flex items-center gap-1.5 text-[12px] font-semibold uppercase tracking-[0.07em] text-subtle">
         {children}
+        {help && <Hint text={help} />}
       </h2>
       {aside}
     </div>

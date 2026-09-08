@@ -5,7 +5,9 @@
 import { ChevronRight, Plus, X } from 'lucide-react'
 import { useState } from 'react'
 import type { ReactNode } from 'react'
+import type { MessageKey } from '../../shared/i18n/index.ts'
 import type { San, SanType } from '../../shared/types.ts'
+import { useT } from '../lib/store.tsx'
 import { Badge, Button, Input, Select, cx } from './ui.tsx'
 
 // ---------------------------------------------------------------------------
@@ -16,7 +18,7 @@ export function StringList({
   values,
   onChange,
   placeholder,
-  addLabel = 'Ajouter',
+  addLabel,
   type = 'text',
 }: {
   values: string[]
@@ -25,6 +27,7 @@ export function StringList({
   addLabel?: string
   type?: string
 }) {
+  const t = useT()
   const [draft, setDraft] = useState('')
 
   const add = () => {
@@ -48,7 +51,7 @@ export function StringList({
               <button
                 type="button"
                 onClick={() => onChange(values.filter((_, j) => j !== i))}
-                aria-label={'Retirer ' + v}
+                aria-label={t('common.remove') + ' ' + v}
                 className="shrink-0 rounded-md p-1.5 text-subtle transition-colors hover:bg-inset hover:text-danger"
               >
                 <X className="size-3.5" />
@@ -80,7 +83,7 @@ export function StringList({
           icon={<Plus className="size-3.5" />}
           className="shrink-0"
         >
-          {addLabel}
+          {addLabel ?? t('common.add')}
         </Button>
       </div>
     </div>
@@ -91,14 +94,14 @@ export function StringList({
 // Noms alternatifs
 // ---------------------------------------------------------------------------
 
-const SAN_LABEL: Record<SanType, string> = {
-  DNS: 'Nom DNS',
-  IP: 'Adresse IP',
-  email: 'Email',
-  URI: 'URI',
-  UPN: 'UPN Windows',
-  RID: 'OID enregistre',
-  otherName: 'Autre (OID)',
+const SAN_LABEL: Record<SanType, MessageKey> = {
+  DNS: 'san.DNS',
+  IP: 'san.IP',
+  email: 'san.email',
+  URI: 'san.URI',
+  UPN: 'san.UPN',
+  RID: 'san.RID',
+  otherName: 'san.otherName',
 }
 
 const SAN_PLACEHOLDER: Record<SanType, string> = {
@@ -125,6 +128,7 @@ export function SanEditor({
   guess: (raw: string) => San
   implicit: San | null
 }) {
+  const t = useT()
   const [type, setType] = useState<SanType>(allowed[0] ?? 'DNS')
   const [value, setValue] = useState('')
   const [oid, setOid] = useState('')
@@ -154,11 +158,11 @@ export function SanEditor({
             value={activeType}
             onChange={(e) => setType(e.target.value as SanType)}
             className="h-9.5 w-36 shrink-0 text-[13px]"
-            aria-label="Type de nom"
+            aria-label={t('new.sanTypeLabel')}
           >
-            {allowed.map((t) => (
-              <option key={t} value={t}>
-                {SAN_LABEL[t]}
+            {allowed.map((type) => (
+              <option key={type} value={type}>
+                {t(SAN_LABEL[type])}
               </option>
             ))}
           </Select>
@@ -194,7 +198,7 @@ export function SanEditor({
           icon={<Plus className="size-4" />}
           className="shrink-0"
         >
-          Ajouter
+          {t('common.add')}
         </Button>
       </div>
 
@@ -204,7 +208,7 @@ export function SanEditor({
             <Badge tone="bg-accent-soft text-accent" className="gap-1.5 py-1">
               <span className="opacity-70">{implicit.type}</span>
               {implicit.value}
-              <span className="opacity-60">· depuis le CN</span>
+              <span className="opacity-60">· {t('san.fromCn')}</span>
             </Badge>
           )}
           {sans.map((san, i) => (
@@ -215,7 +219,7 @@ export function SanEditor({
               <button
                 type="button"
                 onClick={() => onChange(sans.filter((_, j) => j !== i))}
-                aria-label={'Retirer ' + san.value}
+                aria-label={t('common.remove') + ' ' + san.value}
                 className="ml-0.5 rounded opacity-50 transition-opacity hover:opacity-100"
               >
                 <X className="size-3" />
@@ -238,11 +242,12 @@ export function ToggleGrid<T extends string>({
   onChange,
   columns = 2,
 }: {
-  options: Array<{ value: T; label: string; hint: string }>
+  options: Array<{ value: T; labelKey: MessageKey; hintKey: MessageKey }>
   selected: T[]
   onChange: (next: T[]) => void
   columns?: 1 | 2
 }) {
+  const t = useT()
   const toggle = (v: T) =>
     onChange(selected.includes(v) ? selected.filter((x) => x !== v) : [...selected, v])
 
@@ -278,9 +283,9 @@ export function ToggleGrid<T extends string>({
             </span>
             <span className="min-w-0">
               <span className={cx('block text-[13px] font-medium', on ? 'text-accent' : 'text-ink')}>
-                {o.label}
+                {t(o.labelKey)}
               </span>
-              <span className="block text-[11.5px] text-subtle leading-snug">{o.hint}</span>
+              <span className="block text-[11.5px] text-subtle leading-snug">{t(o.hintKey)}</span>
             </span>
           </button>
         )

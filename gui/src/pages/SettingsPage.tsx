@@ -4,6 +4,7 @@
  */
 import { CheckCircle2, FolderOpen, RotateCcw, Save, XCircle } from 'lucide-react'
 import { useEffect, useState } from 'react'
+import { LANGUAGES, type Lang } from '../../shared/i18n/index.ts'
 import type { Capabilities, Settings } from '../../shared/types.ts'
 import { PageBody, PageHeader } from '../components/PageHeader.tsx'
 import { useToast } from '../components/Toast.tsx'
@@ -15,14 +16,16 @@ import {
   Field,
   Input,
   SectionTitle,
+  Select,
   Spinner,
   cx,
 } from '../components/ui.tsx'
 import { api, message, unwrap } from '../lib/api.ts'
-import { useApp } from '../lib/store.tsx'
+import { useApp, useT } from '../lib/store.tsx'
 
 /** Ce que le binaire detecte sait faire : conditionne les choix du formulaire. */
 function CapabilityList({ caps }: { caps: Capabilities }) {
+  const t = useT()
   const items: Array<[string, boolean]> = [
     ['RSA-PSS', caps.rsaPss],
     ['Ed25519', caps.ed25519],
@@ -32,7 +35,7 @@ function CapabilityList({ caps }: { caps: Capabilities }) {
   ]
   return (
     <div className="rounded-lg border border-line bg-sunken px-3.5 py-3">
-      <p className="mb-2 text-[12px] font-medium text-muted">Algorithmes disponibles</p>
+      <p className="mb-2 text-[12px] font-medium text-muted">{t('settings.algorithms')}</p>
       <div className="flex flex-wrap gap-1.5">
         {items.map(([label, on]) => (
           <span
@@ -47,7 +50,7 @@ function CapabilityList({ caps }: { caps: Capabilities }) {
         ))}
       </div>
       <p className="mt-2 text-[11.5px] text-subtle">
-        Courbes elliptiques : {caps.curves.join(', ') || 'aucune detectee'}
+        {t('settings.curves', { list: caps.curves.join(', ') || t('settings.noCurves') })}
       </p>
     </div>
   )
@@ -55,6 +58,7 @@ function CapabilityList({ caps }: { caps: Capabilities }) {
 
 export function SettingsPage() {
   const { settings, probe, updateSettings, refresh } = useApp()
+  const t = useT()
   const toast = useToast()
 
   const [draft, setDraft] = useState<Settings | null>(null)
@@ -87,7 +91,7 @@ export function SettingsPage() {
     setError(null)
     try {
       await updateSettings(draft)
-      toast('success', 'Reglages enregistres')
+      toast('success', t('settings.saved'))
     } catch (err) {
       setError(message(err))
     } finally {
@@ -98,8 +102,8 @@ export function SettingsPage() {
   return (
     <>
       <PageHeader
-        title="Reglages"
-        description="Ou travailler, avec quel openssl, et quelles valeurs pre-remplir dans les demandes."
+        title={t('settings.title')}
+        description={t('settings.desc')}
         actions={
           <>
             {dirty && (
@@ -109,7 +113,7 @@ export function SettingsPage() {
                 icon={<RotateCcw className="size-3.5" />}
                 onClick={() => settings && setDraft(structuredClone(settings))}
               >
-                Annuler
+                {t('common.cancel')}
               </Button>
             )}
             <Button
@@ -120,7 +124,7 @@ export function SettingsPage() {
               icon={<Save className="size-3.5" />}
               onClick={() => void save()}
             >
-              Enregistrer
+              {t('common.save')}
             </Button>
           </>
         }
@@ -130,12 +134,13 @@ export function SettingsPage() {
         {error && <ErrorBanner>{error}</ErrorBanner>}
 
         <section>
-          <SectionTitle>Emplacements</SectionTitle>
+          <SectionTitle>{t('settings.locations')}</SectionTitle>
           <Card className="flex flex-col gap-5 p-5">
             <Field
-              label="Racine de travail"
+              label={t('settings.root')}
               htmlFor="root"
-              hint="Un sous-dossier par demande y est cree. Equivalent de CERT_HOME pour la CLI : les deux interfaces peuvent partager la meme racine. Evitez un dossier synchronise (OneDrive, Dropbox, partage reseau) : les cles privees y seraient copiees hors du poste."
+              hint={t('settings.rootHint')}
+              help={t('settings.rootHelp')}
             >
               <div className="flex gap-2">
                 <Input
@@ -151,15 +156,16 @@ export function SettingsPage() {
                     if (dir) set('rootDir', dir)
                   }}
                 >
-                  Parcourir
+                  {t('settings.browse')}
                 </Button>
               </div>
             </Field>
 
             <Field
-              label="Binaire OpenSSL"
+              label={t('settings.opensslPath')}
               htmlFor="ssl"
-              hint="« openssl » suffit s’il est dans le PATH. Sinon, indiquez le chemin complet."
+              hint={t('settings.opensslPathHint')}
+              help={t('settings.opensslPathHelp')}
             >
               <Input
                 id="ssl"
@@ -185,7 +191,7 @@ export function SettingsPage() {
                 )}
                 <div className="min-w-0">
                   <p className="font-medium">
-                    {probe.available ? 'OpenSSL detecte' : 'OpenSSL introuvable'}
+                    {probe.available ? t('settings.opensslDetected') : t('openssl.notFound')}
                   </p>
                   <p className="mt-0.5 break-words opacity-90 selectable">{probe.version}</p>
                 </div>
@@ -195,7 +201,7 @@ export function SettingsPage() {
                   className="ml-auto shrink-0"
                   onClick={() => void refresh()}
                 >
-                  Tester
+                  {t('settings.test')}
                 </Button>
               </div>
             )}
@@ -205,21 +211,45 @@ export function SettingsPage() {
         </section>
 
         <section>
-          <SectionTitle>Formulaire</SectionTitle>
-          <Card className="p-5">
-            <Checkbox
-              checked={draft.advancedByDefault}
-              onChange={(v) => set('advancedByDefault', v)}
-              label="Ouvrir les demandes en mode avance"
-              hint="Affiche d’emblee le sujet complet, les extensions X.509 et les attributs PKI."
-            />
+          <SectionTitle>{t('settings.form')}</SectionTitle>
+          <Card className="flex flex-col gap-5 p-5">
+            <Field
+              label={t('settings.language')}
+              htmlFor="lang"
+              hint={t('settings.languageHint')}
+              help={t('settings.languageHelp')}
+            >
+              <Select
+                id="lang"
+                value={draft.language}
+                onChange={(e) => set('language', e.target.value as Lang)}
+                className="sm:w-64"
+              >
+                {LANGUAGES.map((l) => (
+                  <option key={l.value} value={l.value}>
+                    {l.label}
+                  </option>
+                ))}
+              </Select>
+            </Field>
+
+            <div className="border-t border-line pt-1">
+              <Checkbox
+                checked={draft.advancedByDefault}
+                onChange={(v) => set('advancedByDefault', v)}
+                label={t('settings.advancedDefault')}
+                hint={t('settings.advancedDefaultHint')}
+              />
+            </div>
           </Card>
         </section>
 
         <section>
-          <SectionTitle>Valeurs par defaut du sujet</SectionTitle>
+          <SectionTitle help={t('settings.subjectDefaultsHelp')}>
+            {t('settings.subjectDefaults')}
+          </SectionTitle>
           <Card className="grid gap-5 p-5 sm:grid-cols-2">
-            <Field label="Pays (C)" htmlFor="dc">
+            <Field label={t('field.country')} htmlFor="dc" help={t('field.country.help')}>
               <Input
                 id="dc"
                 maxLength={2}
@@ -227,35 +257,35 @@ export function SettingsPage() {
                 onChange={(e) => setDefault('country', e.target.value.toUpperCase())}
               />
             </Field>
-            <Field label="Region / Etat (ST)" htmlFor="dst">
+            <Field label={t('field.state')} htmlFor="dst" help={t('field.state.help')}>
               <Input
                 id="dst"
                 value={draft.defaults.state}
                 onChange={(e) => setDefault('state', e.target.value)}
               />
             </Field>
-            <Field label="Ville (L)" htmlFor="dl">
+            <Field label={t('field.locality')} htmlFor="dl" help={t('field.locality.help')}>
               <Input
                 id="dl"
                 value={draft.defaults.locality}
                 onChange={(e) => setDefault('locality', e.target.value)}
               />
             </Field>
-            <Field label="Organisation (O)" htmlFor="do">
+            <Field label={t('field.org')} htmlFor="do" help={t('field.org.help')}>
               <Input
                 id="do"
                 value={draft.defaults.org}
                 onChange={(e) => setDefault('org', e.target.value)}
               />
             </Field>
-            <Field label="Unite (OU)" htmlFor="dou">
+            <Field label={t('field.ous')} htmlFor="dou" help={t('field.ous.help')}>
               <Input
                 id="dou"
                 value={draft.defaults.ou}
                 onChange={(e) => setDefault('ou', e.target.value)}
               />
             </Field>
-            <Field label="Email" htmlFor="dmail">
+            <Field label={t('field.email')} htmlFor="dmail" help={t('field.email.help')}>
               <Input
                 id="dmail"
                 type="email"
@@ -267,17 +297,10 @@ export function SettingsPage() {
         </section>
 
         <section>
-          <SectionTitle>Confidentialite</SectionTitle>
+          <SectionTitle>{t('settings.privacy')}</SectionTitle>
           <Card className="p-5 text-[13px] leading-relaxed text-muted">
-            <p>
-              Les cles privees, les CSR et les PFX restent dans la racine de travail : aucune
-              donnee ne sort de ce poste, l’application n’emet aucune requete reseau.
-            </p>
-            <p className="mt-2">
-              Les mots de passe ne sont jamais enregistres — ni ici, ni dans un fichier de
-              session. Ils ne vivent que le temps de l’assemblage d’un PFX, et sont transmis a
-              openssl par son environnement plutot que par sa ligne de commande.
-            </p>
+            <p>{t('settings.privacy1')}</p>
+            <p className="mt-2">{t('settings.privacy2')}</p>
           </Card>
         </section>
       </PageBody>

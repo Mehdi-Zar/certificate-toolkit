@@ -4,10 +4,14 @@
  * Le fichier de configuration est construit ici de bout en bout, a partir de
  * la demande. Meme arborescence et memes noms de fichiers que generate-csr.sh,
  * pour que la CLI et la GUI restent interchangeables sur un dossier donne.
+ *
+ * Les messages destines a l'utilisateur passent tous par le traducteur recu
+ * en parametre : un avertissement arrive au renderer deja dans sa langue.
  */
 import { createPrivateKey, createPublicKey } from 'node:crypto'
 import { mkdir, readFile, writeFile, chmod, access } from 'node:fs/promises'
 import { join } from 'node:path'
+import type { Translate } from '../shared/i18n/index.ts'
 import { getTemplate } from '../shared/templates.ts'
 import type {
   CsrPreview,
@@ -28,23 +32,23 @@ const KEY_PASS_ENV = 'CERTTK_NEW_KEY_PASS'
 // Validation du nom de dossier
 // ---------------------------------------------------------------------------
 
+const PATH_SEPARATOR = /[/\\]/
+// eslint-disable-next-line no-control-regex
+const FORBIDDEN_CHAR = /[\x00-\x1f<>:"|?*]/
+const ALLOWED_NAME = /^[A-Za-z0-9._*-]+$/
+
 /**
  * Le nom de la demande devient un nom de dossier : il ne doit pouvoir designer
  * que lui-meme. Tout separateur, tout ".." et tout caractere de controle est
- * refuse. Le CN, lui, reste libre — il peut contenir des espaces.
+ * refuse. Le CN, lui, reste libre : il peut contenir des espaces.
  */
-export function assertSafeName(name: string): void {
-  if (!name) throw new Error('Le nom de la demande est obligatoire.')
-  if (name.length > 200) throw new Error('Nom trop long (200 caracteres au maximum).')
-  if (/[/\\]/.test(name)) throw new Error('Le nom ne peut pas contenir de separateur de chemin.')
-  if (name === '.' || name === '..' || name.includes('..')) throw new Error('Nom invalide.')
-  // eslint-disable-next-line no-control-regex
-  if (/[\x00-\x1f<>:"|?*]/.test(name)) {
-    throw new Error('Le nom contient un caractere interdit dans un nom de dossier.')
-  }
-  if (!/^[A-Za-z0-9._*-]+$/.test(name)) {
-    throw new Error('Nom invalide : lettres, chiffres, point, tiret, souligne et * uniquement.')
-  }
+export function assertSafeName(name: string, t: Translate): void {
+  if (!name) throw new Error(t('err.nameRequired'))
+  if (name.length > 200) throw new Error(t('err.nameTooLong'))
+  if (PATH_SEPARATOR.test(name)) throw new Error(t('err.nameSeparator'))
+  if (name === '.' || name === '..' || name.includes('..')) throw new Error(t('err.nameInvalid'))
+  if (FORBIDDEN_CHAR.test(name)) throw new Error(t('err.nameControlChar'))
+  if (!ALLOWED_NAME.test(name)) throw new Error(t('err.nameCharset'))
 }
 
 /** Derive un nom de dossier utilisable a partir d'un CN quelconque. */
@@ -136,44 +140,42 @@ function renderAltNames(sans: San[]): string {
  * Les valeurs sont ecrites telles quelles dans un fichier lu par openssl :
  * un retour a la ligne y injecterait une directive. On les refuse partout.
  */
-function safe(label: string, value: string): string {
-  if (/[\r\n]/.test(value)) {
-    throw new Error('Le champ « ' + label + ' » ne peut pas contenir de retour a la ligne.')
-  }
+function safe(t: Translate, label: string, value: string): string {
+  if (/[\r\n]/.test(value)) throw new Error(t('warn.newline', { field: label }))
   return value.trim()
 }
 
 /** Emet un attribut de DN, avec prefixe numerote s'il est repete. */
-function dnLines(key: string, values: string[], label: string): string[] {
-  const kept = values.map((v) => safe(label, v)).filter(Boolean)
+function dnLines(t: Translate, key: string, values: string[], label: string): string[] {
+  const kept = values.map((v) => safe(t, label, v)).filter(Boolean)
   if (kept.length === 0) return []
   if (kept.length === 1) return [key + ' = ' + kept[0]]
   return kept.map((v, i) => i + 1 + '.' + key + ' = ' + v)
 }
 
-function renderSubject(s: Subject): string[] {
+function renderSubject(s: Subject, t: Translate): string[] {
   const lines: string[] = []
-  lines.push(...dnLines('countryName', [s.country], 'Pays'))
-  lines.push(...dnLines('stateOrProvinceName', [s.state], 'Region'))
-  lines.push(...dnLines('localityName', [s.locality], 'Ville'))
-  lines.push(...dnLines('streetAddress', [s.street], 'Rue'))
-  lines.push(...dnLines('postalCode', [s.postalCode], 'Code postal'))
-  lines.push(...dnLines('organizationName', [s.org], 'Organisation'))
-  lines.push(...dnLines('organizationalUnitName', s.ous, 'Unite'))
-  lines.push(...dnLines('title', [s.title], 'Fonction'))
-  lines.push(...dnLines('givenName', [s.givenName], 'Prenom'))
-  lines.push(...dnLines('surname', [s.surname], 'Nom'))
+  lines.push(...dnLines(t, 'countryName', [s.country], t('field.country')))
+  lines.push(...dnLines(t, 'stateOrProvinceName', [s.state], t('field.state')))
+  lines.push(...dnLines(t, 'localityName', [s.locality], t('field.locality')))
+  lines.push(...dnLines(t, 'streetAddress', [s.street], t('field.street')))
+  lines.push(...dnLines(t, 'postalCode', [s.postalCode], t('field.postalCode')))
+  lines.push(...dnLines(t, 'organizationName', [s.org], t('field.org')))
+  lines.push(...dnLines(t, 'organizationalUnitName', s.ous, t('field.ous')))
+  lines.push(...dnLines(t, 'title', [s.title], t('field.title')))
+  lines.push(...dnLines(t, 'givenName', [s.givenName], t('field.givenName')))
+  lines.push(...dnLines(t, 'surname', [s.surname], t('field.surname')))
   // Le CN est le seul champ obligatoire.
-  lines.push('commonName = ' + safe('Common Name', s.commonName))
-  lines.push(...dnLines('emailAddress', [s.email], 'Email'))
-  lines.push(...dnLines('serialNumber', [s.serialNumber], 'Numero de serie'))
-  lines.push(...dnLines('businessCategory', [s.businessCategory], 'Categorie'))
-  lines.push(...dnLines('domainComponent', s.domainComponents, 'Composant de domaine'))
-  lines.push(...dnLines('UID', [s.uid], 'UID'))
+  lines.push('commonName = ' + safe(t, t('tpl.custom.cn'), s.commonName))
+  lines.push(...dnLines(t, 'emailAddress', [s.email], t('field.email')))
+  lines.push(...dnLines(t, 'serialNumber', [s.serialNumber], t('field.serialNumber')))
+  lines.push(...dnLines(t, 'businessCategory', [s.businessCategory], t('field.businessCategory')))
+  lines.push(...dnLines(t, 'domainComponent', s.domainComponents, t('field.dc')))
+  lines.push(...dnLines(t, 'UID', [s.uid], t('field.uid')))
   return lines
 }
 
-function renderExtensions(ext: Extensions, hasSans: boolean): string[] {
+function renderExtensions(ext: Extensions, hasSans: boolean, t: Translate): string[] {
   const lines: string[] = []
   if (hasSans) lines.push('subjectAltName = @alt_names')
 
@@ -194,9 +196,11 @@ function renderExtensions(ext: Extensions, hasSans: boolean): string[] {
   }
 
   if (ext.extendedKeyUsage.include && ext.extendedKeyUsage.purposes.length > 0) {
-    const purposes = ext.extendedKeyUsage.purposes.map((p) => safe('Usage etendu', p))
+    const purposes = ext.extendedKeyUsage.purposes.map((p) => safe(t, t('new.ekuTitle'), p))
     lines.push(
-      'extendedKeyUsage = ' + (ext.extendedKeyUsage.critical ? 'critical, ' : '') + purposes.join(', '),
+      'extendedKeyUsage = ' +
+        (ext.extendedKeyUsage.critical ? 'critical, ' : '') +
+        purposes.join(', '),
     )
   }
 
@@ -206,26 +210,34 @@ function renderExtensions(ext: Extensions, hasSans: boolean): string[] {
   if (ext.certificatePolicies.length > 0) {
     lines.push(
       'certificatePolicies = ' +
-        ext.certificatePolicies.map((p) => safe('Politique', p)).filter(Boolean).join(', '),
+        ext.certificatePolicies
+          .map((p) => safe(t, t('field.policies'), p))
+          .filter(Boolean)
+          .join(', '),
     )
   }
 
   if (ext.crlDistributionPoints.length > 0) {
     lines.push(
       'crlDistributionPoints = ' +
-        ext.crlDistributionPoints.map((u) => 'URI:' + safe('Point de distribution', u)).filter(Boolean).join(', '),
+        ext.crlDistributionPoints
+          .map((u) => 'URI:' + safe(t, t('field.crl'), u))
+          .filter((v) => v !== 'URI:')
+          .join(', '),
     )
   }
 
   const aia = [
-    ...ext.authorityInfoAccess.ocsp.map((u) => 'OCSP;URI:' + safe('OCSP', u)),
-    ...ext.authorityInfoAccess.caIssuers.map((u) => 'caIssuers;URI:' + safe('caIssuers', u)),
+    ...ext.authorityInfoAccess.ocsp.map((u) => 'OCSP;URI:' + safe(t, t('field.ocsp'), u)),
+    ...ext.authorityInfoAccess.caIssuers.map(
+      (u) => 'caIssuers;URI:' + safe(t, t('field.caIssuers'), u),
+    ),
   ].filter((v) => !v.endsWith(':'))
   if (aia.length > 0) lines.push('authorityInfoAccess = ' + aia.join(', '))
 
   for (const c of ext.custom) {
-    const name = safe('Nom d’extension', c.name)
-    const value = safe('Valeur d’extension', c.value)
+    const name = safe(t, t('new.customExtTitle'), c.name)
+    const value = safe(t, t('new.customExtTitle'), c.value)
     if (!name || !value) continue
     lines.push(name + ' = ' + (c.critical ? 'critical, ' : '') + value)
   }
@@ -236,7 +248,7 @@ function renderExtensions(ext: Extensions, hasSans: boolean): string[] {
 /** Les algorithmes a signature implicite refusent qu'on leur impose une empreinte. */
 const IMPLICIT_DIGEST = new Set(['ed25519', 'ed448', 'ml-dsa'])
 
-export function renderConfig(req: CsrRequest, sans: San[]): string {
+export function renderConfig(req: CsrRequest, sans: San[], t: Translate): string {
   const out: string[] = ['[ req ]']
   if (!IMPLICIT_DIGEST.has(req.key.algorithm)) out.push('default_md = ' + req.digest)
   out.push('prompt = no')
@@ -246,18 +258,23 @@ export function renderConfig(req: CsrRequest, sans: San[]): string {
 
   const attrs: string[] = []
   if (req.attributes.challengePassword.trim()) {
-    attrs.push('challengePassword = ' + safe('Challenge password', req.attributes.challengePassword))
+    attrs.push(
+      'challengePassword = ' +
+        safe(t, t('field.challengePassword'), req.attributes.challengePassword),
+    )
   }
   if (req.attributes.unstructuredName.trim()) {
-    attrs.push('unstructuredName = ' + safe('Nom non structure', req.attributes.unstructuredName))
+    attrs.push(
+      'unstructuredName = ' + safe(t, t('field.unstructuredName'), req.attributes.unstructuredName),
+    )
   }
   if (attrs.length > 0) out.push('attributes = req_attributes')
 
-  out.push('', '[ req_distinguished_name ]', ...renderSubject(req.subject))
+  out.push('', '[ req_distinguished_name ]', ...renderSubject(req.subject, t))
 
   if (attrs.length > 0) out.push('', '[ req_attributes ]', ...attrs)
 
-  out.push('', '[ req_ext ]', ...renderExtensions(req.extensions, sans.length > 0))
+  out.push('', '[ req_ext ]', ...renderExtensions(req.extensions, sans.length > 0, t))
 
   if (sans.length > 0) out.push('', '[ alt_names ]', renderAltNames(sans))
 
@@ -278,8 +295,8 @@ export interface Paths {
   pfx: string
 }
 
-export function pathsFor(rootDir: string, name: string): Paths {
-  assertSafeName(name)
+export function pathsFor(rootDir: string, name: string, t: Translate): Paths {
+  assertSafeName(name, t)
   const dir = join(rootDir, name)
   return {
     dir,
@@ -306,113 +323,104 @@ const exists = (p: string): Promise<boolean> =>
 // probleme dans les termes du modele choisi.
 // ---------------------------------------------------------------------------
 
-export function validate(req: CsrRequest): Warning[] {
+export function validate(req: CsrRequest, t: Translate): Warning[] {
   const w: Warning[] = []
-  const t = getTemplate(req.templateId)
+  const template = getTemplate(req.templateId)
   const sans = buildSanList(req)
   const eku = req.extensions.extendedKeyUsage
   const ku = req.extensions.keyUsage
 
   // --- bloquants ---------------------------------------------------------
   if (!req.subject.commonName.trim()) {
-    w.push({ level: 'error', field: 'commonName', message: 'Le ' + t.commonNameLabel.toLowerCase() + ' est obligatoire.' })
+    w.push({
+      level: 'error',
+      field: 'commonName',
+      message: t('warn.cnRequired', { field: t(template.cnKey).toLowerCase() }),
+    })
   }
   try {
-    assertSafeName(req.name)
+    assertSafeName(req.name, t)
   } catch (err) {
-    w.push({ level: 'error', field: 'name', message: err instanceof Error ? err.message : String(err) })
+    w.push({
+      level: 'error',
+      field: 'name',
+      message: err instanceof Error ? err.message : String(err),
+    })
   }
-  if (t.sanRequired && sans.length === 0) {
-    w.push({ level: 'error', field: 'sans', message: 'Ce modele exige au moins un nom alternatif. ' + t.sanHint })
+  if (template.sanRequired && sans.length === 0) {
+    w.push({
+      level: 'error',
+      field: 'sans',
+      message: t('warn.sanRequired', { hint: t(template.sanHintKey) }),
+    })
   }
-  if (req.key.algorithm === 'rsa' || req.key.algorithm === 'rsa-pss') {
-    if (req.key.bits < 2048) {
-      w.push({ level: 'error', field: 'key', message: 'Une cle RSA de moins de 2048 bits est refusee partout depuis 2014.' })
-    }
+  if ((req.key.algorithm === 'rsa' || req.key.algorithm === 'rsa-pss') && req.key.bits < 2048) {
+    w.push({ level: 'error', field: 'key', message: t('warn.rsaTooSmall') })
   }
   if (req.key.encrypt && !req.key.passphrase) {
-    w.push({ level: 'error', field: 'passphrase', message: 'Le chiffrement de la cle est demande mais la phrase secrete est vide.' })
+    w.push({ level: 'error', field: 'passphrase', message: t('warn.passphraseEmpty') })
   }
   if (req.subject.country.trim() && req.subject.country.trim().length !== 2) {
-    w.push({ level: 'error', field: 'country', message: 'Le pays doit etre un code a deux lettres (FR, BE, CH...).' })
+    w.push({ level: 'error', field: 'country', message: t('warn.countryFormat') })
   }
 
   // --- avertissements ----------------------------------------------------
-  if (t.id === 'tls-public') {
+  if (template.id === 'tls-public') {
     if (eku.purposes.includes('clientAuth')) {
-      w.push({
-        level: 'warn',
-        field: 'eku',
-        message:
-          'Un certificat TLS public ne peut plus porter clientAuth en plus de serverAuth depuis juin 2026. Une autorite publique refusera cette demande.',
-      })
+      w.push({ level: 'warn', field: 'eku', message: t('warn.dualEku') })
     }
     if (sans.some((s) => s.type === 'IP')) {
-      w.push({ level: 'warn', field: 'sans', message: 'Une adresse IP en SAN n’est delivree que par de rares autorites publiques.' })
+      w.push({ level: 'warn', field: 'sans', message: t('warn.publicIp') })
     }
     const internal = sans.filter(
-      (s) => s.type === 'DNS' && (!s.value.includes('.') || /\.(local|internal|lan|home|corp|intranet)$/i.test(s.value)),
+      (s) =>
+        s.type === 'DNS' &&
+        (!s.value.includes('.') || /\.(local|internal|lan|home|corp|intranet)$/i.test(s.value)),
     )
     if (internal.length > 0) {
       w.push({
         level: 'warn',
         field: 'sans',
-        message: 'Nom non public : ' + internal.map((s) => s.value).join(', ') + '. Utilisez plutot le modele « Serveur interne ».',
+        message: t('warn.internalName', { names: internal.map((s) => s.value).join(', ') }),
       })
     }
   }
 
-  const wildcards = sans.filter((s) => s.type === 'DNS' && s.value.includes('*'))
-  for (const wc of wildcards) {
+  for (const wc of sans.filter((s) => s.type === 'DNS' && s.value.includes('*'))) {
     if (!wc.value.startsWith('*.') || wc.value.slice(2).includes('*')) {
-      w.push({ level: 'warn', field: 'sans', message: 'Joker mal forme : ' + wc.value + '. Seule la forme *.exemple.fr est acceptee.' })
+      w.push({ level: 'warn', field: 'sans', message: t('warn.badWildcard', { name: wc.value }) })
     }
   }
 
   if (ku.include && ku.bits.length === 0) {
-    w.push({ level: 'warn', field: 'keyUsage', message: 'L’extension keyUsage est activee mais aucun usage n’est coche.' })
+    w.push({ level: 'warn', field: 'keyUsage', message: t('warn.noKeyUsage') })
   }
   if (req.key.algorithm === 'ec' && ku.bits.includes('keyEncipherment')) {
-    w.push({
-      level: 'warn',
-      field: 'keyUsage',
-      message: 'keyEncipherment n’a pas de sens avec une cle EC : ECDHE negocie la cle, il ne la chiffre pas.',
-    })
+    w.push({ level: 'warn', field: 'keyUsage', message: t('warn.ecKeyEncipherment') })
   }
   if (req.extensions.basicConstraints.ca && !ku.bits.includes('keyCertSign')) {
-    w.push({ level: 'warn', field: 'keyUsage', message: 'CA:TRUE sans keyCertSign : cette autorite ne pourrait signer aucun certificat.' })
+    w.push({ level: 'warn', field: 'keyUsage', message: t('warn.caNoKeyCertSign') })
   }
   if (!req.extensions.basicConstraints.ca && ku.bits.includes('keyCertSign')) {
-    w.push({ level: 'warn', field: 'keyUsage', message: 'keyCertSign sur un certificat qui n’est pas une CA : incoherent, et refuse par la plupart des PKI.' })
+    w.push({ level: 'warn', field: 'keyUsage', message: t('warn.keyCertSignNoCa') })
   }
   if (eku.purposes.includes('anyExtendedKeyUsage') && eku.purposes.length > 1) {
-    w.push({ level: 'warn', field: 'eku', message: '« Tous usages » rend les autres usages inutiles.' })
+    w.push({ level: 'warn', field: 'eku', message: t('warn.anyEku') })
   }
-  if (t.id === 'code-signing' && req.key.algorithm === 'rsa' && req.key.bits < 3072) {
-    w.push({ level: 'warn', field: 'key', message: 'Les autorites exigent 3072 bits au minimum pour la signature de code.' })
+  if (template.id === 'code-signing' && req.key.algorithm === 'rsa' && req.key.bits < 3072) {
+    w.push({ level: 'warn', field: 'key', message: t('warn.codeSigningBits') })
   }
   if (req.extensions.mustStaple) {
-    w.push({
-      level: 'info',
-      message: 'Agrafage OCSP obligatoire : le serveur deviendra injoignable s’il n’agrafe pas de reponse.',
-    })
+    w.push({ level: 'info', message: t('warn.mustStaple') })
   }
   if (req.key.algorithm === 'ml-dsa') {
-    w.push({
-      level: 'info',
-      field: 'key',
-      message: 'ML-DSA est post-quantique et normalise (FIPS 204), mais tres peu de PKI le signent aujourd’hui. Verifiez avant d’envoyer.',
-    })
+    w.push({ level: 'info', field: 'key', message: t('warn.mldsa') })
   }
   if (req.key.algorithm === 'ed25519' || req.key.algorithm === 'ed448') {
-    w.push({
-      level: 'info',
-      field: 'key',
-      message: 'Ed25519 et Ed448 restent mal supportes par les PKI d’entreprise et les equipements reseau.',
-    })
+    w.push({ level: 'info', field: 'key', message: t('warn.eddsa') })
   }
   if (!req.key.encrypt && req.extensions.basicConstraints.ca) {
-    w.push({ level: 'warn', field: 'passphrase', message: 'Une cle d’autorite non chiffree sur le disque est un risque majeur.' })
+    w.push({ level: 'warn', field: 'passphrase', message: t('warn.caUnencrypted') })
   }
 
   return w
@@ -422,15 +430,18 @@ export function validate(req: CsrRequest): Warning[] {
 // Apercu : la meme configuration, sans rien ecrire
 // ---------------------------------------------------------------------------
 
-export function preview(req: CsrRequest): CsrPreview {
+export function preview(req: CsrRequest, t: Translate): CsrPreview {
   const sans = buildSanList(req)
+  const warnings = validate(req, t)
   let config: string
-  const warnings = validate(req)
   try {
-    config = renderConfig(req, sans)
+    config = renderConfig(req, sans, t)
   } catch (err) {
     config = ''
-    warnings.unshift({ level: 'error', message: err instanceof Error ? err.message : String(err) })
+    warnings.unshift({
+      level: 'error',
+      message: err instanceof Error ? err.message : String(err),
+    })
   }
 
   const name = req.name || 'demande'
@@ -442,13 +453,8 @@ export function preview(req: CsrRequest): CsrPreview {
     '-extensions req_ext',
   ].join(' ')
 
-  return { config, command: keygenCommand(req, name) + '\n' + cmd, warnings }
-}
-
-/** La commande de generation de cle, telle qu'on la taperait a la main. */
-function keygenCommand(req: CsrRequest, name: string): string {
-  const args = keygenArgs(req, name + '.key.pem')
-  return 'openssl ' + args.join(' ')
+  const keygen = 'openssl ' + keygenArgs(req, name + '.key.pem').join(' ')
+  return { config, command: keygen + '\n' + cmd, warnings }
 }
 
 function keygenArgs(req: CsrRequest, out: string): string[] {
@@ -487,18 +493,18 @@ export async function generateCsr(
   ssl: Openssl,
   rootDir: string,
   req: CsrRequest,
+  t: Translate,
 ): Promise<CsrResult> {
-  const blocking = validate(req).filter((v) => v.level === 'error')
+  const blocking = validate(req, t).filter((v) => v.level === 'error')
   if (blocking.length > 0) throw new Error(blocking.map((b) => b.message).join('\n'))
 
-  const p = pathsFor(rootDir, req.name)
+  const p = pathsFor(rootDir, req.name, t)
 
   if (!req.force && (await exists(p.key))) {
-    throw new Error(
-      'Une cle privee existe deja pour « ' + req.name + ' ».\n' +
-        'Si une CSR est en cours de signature chez la PKI, la regenerer rendrait le certificat a venir inutilisable. ' +
-        'Cochez « Ecraser la cle existante » pour passer outre.',
-    )
+    throw new Error(t('err.keyExists', { name: req.name }))
+  }
+  if (req.key.algorithm === 'rsa' && ![2048, 3072, 4096, 8192].includes(req.key.bits)) {
+    throw new Error(t('err.rsaBits', { bits: req.key.bits }))
   }
 
   const sans = buildSanList(req)
@@ -528,15 +534,18 @@ export async function generateCsr(
   }
 
   // 2. Configuration
-  await writeFile(p.cnf, renderConfig(req, sans), 'utf8')
+  await writeFile(p.cnf, renderConfig(req, sans, t), 'utf8')
 
   // 3. CSR
-  const reqArgs = ['req', '-new', '-key', p.key, '-out', p.csr, '-config', p.cnf, '-extensions', 'req_ext']
+  const reqArgs = [
+    'req', '-new', '-key', p.key, '-out', p.csr, '-config', p.cnf, '-extensions', 'req_ext',
+  ]
   if (req.key.encrypt) reqArgs.push('-passin', 'env:' + KEY_PASS_ENV)
   await ssl.must(reqArgs, env ? { env } : {})
 
-  const verifyArgs = ['req', '-in', p.csr, '-noout', '-verify']
-  if (!(await ssl.ok(verifyArgs))) throw new Error('La CSR generee ne se verifie pas.')
+  if (!(await ssl.ok(['req', '-in', p.csr, '-noout', '-verify']))) {
+    throw new Error(t('err.csrVerify'))
+  }
 
   const subject = (
     await ssl.must(['req', '-in', p.csr, '-noout', '-subject', '-nameopt', 'RFC2253'])
@@ -601,7 +610,9 @@ function describeRequestedKey(req: CsrRequest): string {
 // "source" shell : le fichier est lu ligne a ligne).
 // ---------------------------------------------------------------------------
 
-const META_KEYS = ['FQDN', 'KEY', 'CSR', 'CNF', 'SIGNED_DIR', 'KEYDESC', 'SANS', 'TEMPLATE', 'CN', 'ENCRYPTED'] as const
+const META_KEYS = [
+  'FQDN', 'KEY', 'CSR', 'CNF', 'SIGNED_DIR', 'KEYDESC', 'SANS', 'TEMPLATE', 'CN', 'ENCRYPTED',
+] as const
 export type Meta = Partial<Record<(typeof META_KEYS)[number], string>>
 
 export function parseMeta(text: string): Meta {

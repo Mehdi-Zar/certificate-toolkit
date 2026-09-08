@@ -1,12 +1,13 @@
 /**
  * Etat partage : reglages, inventaire, diagnostic openssl.
  *
- * Un contexte suffit — l'application a trois ecrans et une seule source de
+ * Un contexte suffit, l'application a trois ecrans et une seule source de
  * verite, le systeme de fichiers. Chaque action qui ecrit sur le disque
  * declenche un rafraichissement de l'inventaire.
  */
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
+import { translator, type Translate } from '../../shared/i18n/index.ts'
 import type { CertEntry, OpensslProbe, Settings } from '../../shared/types.ts'
 import { api, message, unwrap } from './api.ts'
 
@@ -26,6 +27,15 @@ export function useApp(): AppState {
   const ctx = useContext(AppContext)
   if (!ctx) throw new Error('useApp doit etre utilise dans AppProvider')
   return ctx
+}
+
+/**
+ * Le traducteur de la langue courante. Avant que les reglages ne soient lus,
+ * on repond en francais plutot que d'afficher des cles brutes.
+ */
+export function useT(): Translate {
+  const { settings } = useApp()
+  return useMemo(() => translator(settings?.language ?? 'fr'), [settings?.language])
 }
 
 export function AppProvider({ children }: { children: ReactNode }) {
@@ -66,6 +76,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     void refresh()
   }, [refresh])
+
+  useEffect(() => {
+    if (settings) document.documentElement.lang = settings.language
+  }, [settings])
 
   const value = useMemo<AppState>(
     () => ({ settings, entries, probe, loading, error, refresh, updateSettings }),

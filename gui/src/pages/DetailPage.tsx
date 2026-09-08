@@ -39,12 +39,24 @@ import {
   cx,
 } from '../components/ui.tsx'
 import { api, message, unwrap } from '../lib/api.ts'
-import { STATUS, basename, commonName, expiryLabel, shortDate, wrapFingerprint } from '../lib/format.ts'
-import { useApp } from '../lib/store.tsx'
+import type { Lang, Translate } from '../../shared/i18n/index.ts'
+import {
+  STATUS_TONE,
+  basename,
+  commonName,
+  expiryLabel,
+  shortDate,
+  statusHintKey,
+  statusLabelKey,
+  wrapFingerprint,
+} from '../lib/format.ts'
+import { useApp, useT } from '../lib/store.tsx'
 import { BackLink } from './NewRequestPage.tsx'
 
 export function DetailPage({ fqdn, navigate }: { fqdn: string; navigate: (r: Route) => void }) {
-  const { refresh } = useApp()
+  const { refresh, settings } = useApp()
+  const t = useT()
+  const lang: Lang = settings?.language ?? 'fr'
   const [entry, setEntry] = useState<CertEntry | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
@@ -80,13 +92,16 @@ export function DetailPage({ fqdn, navigate }: { fqdn: string; navigate: (r: Rou
   if (!entry) {
     return (
       <>
-        <PageHeader title={fqdn} back={<BackLink label="Certificats" onClick={() => navigate({ name: 'list' })} />} />
+        <PageHeader
+          title={fqdn}
+          back={<BackLink label={t('new.backToList')} onClick={() => navigate({ name: 'list' })} />}
+        />
         <PageBody>
           <Card>
             <EmptyState
               icon={<Inbox className="size-5" />}
-              title="Dossier introuvable"
-              description={error ?? 'Ce FQDN n’a plus de dossier dans la racine de travail.'}
+              title={t('detail.notFoundTitle')}
+              description={error ?? t('detail.notFoundDesc')}
             />
           </Card>
         </PageBody>
@@ -94,26 +109,24 @@ export function DetailPage({ fqdn, navigate }: { fqdn: string; navigate: (r: Rou
     )
   }
 
-  const style = STATUS[entry.status]
-
   return (
     <>
       <PageHeader
         title={
           <span className="flex items-center gap-2.5">
             {entry.fqdn}
-            <Badge tone={style.tone}>{style.label}</Badge>
+            <Badge tone={STATUS_TONE[entry.status]}>{t(statusLabelKey(entry.status))}</Badge>
           </span>
         }
-        description={style.hint}
-        back={<BackLink label="Certificats" onClick={() => navigate({ name: 'list' })} />}
+        description={t(statusHintKey(entry.status))}
+        back={<BackLink label={t('new.backToList')} onClick={() => navigate({ name: 'list' })} />}
         actions={
           <Button
             size="sm"
             icon={<FolderOpen className="size-3.5" />}
             onClick={() => void api.system.openDir(entry.dir)}
           >
-            Ouvrir le dossier
+            {t('common.openFolder')}
           </Button>
         }
       />
@@ -121,7 +134,7 @@ export function DetailPage({ fqdn, navigate }: { fqdn: string; navigate: (r: Rou
       <PageBody>
         {error && <ErrorBanner>{error}</ErrorBanner>}
 
-        {entry.cert && <IssuedCert cert={entry.cert} />}
+        {entry.cert && <IssuedCert cert={entry.cert} t={t} lang={lang} />}
 
         <StepCsr entry={entry} />
         <StepSigned entry={entry} onChange={afterWrite} />
@@ -135,7 +148,7 @@ export function DetailPage({ fqdn, navigate }: { fqdn: string; navigate: (r: Rou
 // Certificat emis
 // ---------------------------------------------------------------------------
 
-function IssuedCert({ cert }: { cert: CertInfo }) {
+function IssuedCert({ cert, t, lang }: { cert: CertInfo; t: Translate; lang: Lang }) {
   const critical = cert.daysRemaining < 0
   const soon = cert.daysRemaining >= 0 && cert.daysRemaining <= 30
 
@@ -151,7 +164,7 @@ function IssuedCert({ cert }: { cert: CertInfo }) {
           <ShieldCheck
             className={cx('size-4', critical ? 'text-danger' : soon ? 'text-warn' : 'text-ok')}
           />
-          <h3 className="font-medium">Certificat en place</h3>
+          <h3 className="font-medium">{t('detail.certInPlace')}</h3>
         </div>
         <span
           className={cx(
@@ -159,20 +172,20 @@ function IssuedCert({ cert }: { cert: CertInfo }) {
             critical ? 'text-danger' : soon ? 'text-warn' : 'text-muted',
           )}
         >
-          {expiryLabel(cert.daysRemaining)}
+          {expiryLabel(cert.daysRemaining, t)}
         </span>
       </div>
 
       <Rows>
-        <Row label="Sujet">{cert.subject}</Row>
-        <Row label="Emetteur">{commonName(cert.issuer)}</Row>
-        <Row label="Validite">
-          {shortDate(cert.notBefore)} — {shortDate(cert.notAfter)}
+        <Row label={t('label.subject')}>{cert.subject}</Row>
+        <Row label={t('label.issuer')}>{commonName(cert.issuer)}</Row>
+        <Row label={t('label.validity')}>
+          {shortDate(cert.notBefore, lang)} / {shortDate(cert.notAfter, lang)}
         </Row>
-        <Row label="SAN">{cert.sans.join(', ') || '(aucun)'}</Row>
-        <Row label="Usages">{cert.eku.join(', ') || '(aucun)'}</Row>
-        <Row label="Cle">{cert.keyDesc}</Row>
-        <Row label="Empreinte">
+        <Row label={t('label.san')}>{cert.sans.join(', ') || t('common.none')}</Row>
+        <Row label={t('label.usages')}>{cert.eku.join(', ') || t('common.none')}</Row>
+        <Row label={t('label.key')}>{cert.keyDesc}</Row>
+        <Row label={t('label.fingerprint')}>
           <span className="font-mono text-[11.5px] whitespace-pre-line">
             {wrapFingerprint(cert.fingerprint)}
           </span>
@@ -187,6 +200,7 @@ function IssuedCert({ cert }: { cert: CertInfo }) {
 // ---------------------------------------------------------------------------
 
 function StepCsr({ entry }: { entry: CertEntry }) {
+  const t = useT()
   const toast = useToast()
   const [pem, setPem] = useState<string | null>(null)
   const [open, setOpen] = useState(false)
@@ -203,7 +217,7 @@ function StepCsr({ entry }: { entry: CertEntry }) {
     setPem(text)
     await api.system.copy(text)
     setCopied(true)
-    toast('success', 'CSR copiee dans le presse-papiers')
+    toast('success', t('new.toastCopied'))
     setTimeout(() => setCopied(false), 2000)
   }
 
@@ -219,35 +233,39 @@ function StepCsr({ entry }: { entry: CertEntry }) {
                 icon={open ? <EyeOff className="size-3.5" /> : <Eye className="size-3.5" />}
                 onClick={() => setOpen((v) => !v)}
               >
-                {open ? 'Masquer' : 'Afficher'}
+                {open ? t('common.hide') : t('common.show')}
               </Button>
               <Button
                 size="sm"
                 icon={copied ? <Check className="size-3.5" /> : <Copy className="size-3.5" />}
                 onClick={() => void copy()}
               >
-                {copied ? 'Copiee' : 'Copier'}
+                {copied ? t('common.copied') : t('common.copy')}
               </Button>
             </div>
           )
         }
       >
-        1 · Demande de signature
+        {t('detail.step1')}
       </SectionTitle>
 
       <Card className="overflow-hidden">
         <div className="p-5">
           <Rows>
-            <Row label="Cle privee">
-              {entry.hasKey ? entry.keyDesc ?? 'presente' : <span className="text-danger">absente</span>}
+            <Row label={t('label.privateKey')}>
+              {entry.hasKey ? (
+                (entry.keyDesc ?? t('label.present'))
+              ) : (
+                <span className="text-danger">{t('label.absent')}</span>
+              )}
             </Row>
-            <Row label="SAN demandes">{entry.sans.join(', ') || '(inconnus)'}</Row>
+            <Row label={t('label.requestedSans')}>{entry.sans.join(', ') || t('common.unknown')}</Row>
           </Rows>
         </div>
 
         {open && (
           <pre className="max-h-64 overflow-auto border-t border-line bg-sunken p-4 font-mono text-[11.5px] leading-[1.55] text-muted selectable">
-            {pem === null ? 'Lecture...' : pem.trim() || 'CSR illisible.'}
+            {pem === null ? t('common.reading') : pem.trim() || t('common.none')}
           </pre>
         )}
       </Card>
@@ -260,6 +278,7 @@ function StepCsr({ entry }: { entry: CertEntry }) {
 // ---------------------------------------------------------------------------
 
 function StepSigned({ entry, onChange }: { entry: CertEntry; onChange: () => Promise<void> }) {
+  const t = useT()
   const toast = useToast()
   const [dragging, setDragging] = useState(false)
   const [busy, setBusy] = useState(false)
@@ -270,7 +289,7 @@ function StepSigned({ entry, onChange }: { entry: CertEntry; onChange: () => Pro
     setBusy(true)
     try {
       const files = await unwrap(api.signed.importFiles(entry.fqdn, paths))
-      toast('success', paths.length + ' fichier(s) depose(s) · ' + files.length + ' au total')
+      toast('success', t('detail.imported', { n: paths.length, total: files.length }))
       await onChange()
     } catch (err) {
       toast('error', message(err))
@@ -287,7 +306,7 @@ function StepSigned({ entry, onChange }: { entry: CertEntry; onChange: () => Pro
       .map((f) => api.system.pathForFile(f))
       .filter(Boolean)
     if (paths.length === 0) {
-      toast('error', 'Impossible de lire le chemin de ces fichiers.')
+      toast('error', t('detail.dropError'))
       return
     }
     await importFiles(paths)
@@ -303,11 +322,11 @@ function StepSigned({ entry, onChange }: { entry: CertEntry; onChange: () => Pro
             icon={<FolderOpen className="size-3.5" />}
             onClick={() => void api.system.openDir(entry.dir + '/Signed')}
           >
-            Ouvrir Signed/
+            {t('detail.openSigned')}
           </Button>
         }
       >
-        2 · Retours de la PKI
+        {t('detail.step2')}
       </SectionTitle>
 
       <Card
@@ -328,18 +347,18 @@ function StepSigned({ entry, onChange }: { entry: CertEntry; onChange: () => Pro
         {entry.signedFiles.length === 0 ? (
           <EmptyState
             icon={busy ? <Spinner /> : <Upload className="size-5" />}
-            title={dragging ? 'Deposez ici' : 'Aucun fichier recu'}
-            description="Glissez les fichiers renvoyes par la PKI, ou selectionnez-les. PEM, CRT, CER, DER et P7B sont acceptes."
+            title={dragging ? t('detail.dropHere') : t('detail.noSignedTitle')}
+            description={t('detail.noSignedDesc')}
             action={
               <Button
                 icon={<FileDown className="size-4" />}
                 loading={busy}
                 onClick={async () => {
-                  const picked = await unwrap(api.system.pickFiles('Fichiers renvoyes par la PKI'))
+                  const picked = await unwrap(api.system.pickFiles(t('dialog.pickSigned')))
                   await importFiles(picked)
                 }}
               >
-                Selectionner des fichiers
+                {t('detail.pickFiles')}
               </Button>
             }
           />
@@ -357,8 +376,8 @@ function StepSigned({ entry, onChange }: { entry: CertEntry; onChange: () => Pro
                   </span>
                   <button
                     onClick={() => void api.system.reveal(file)}
-                    title="Montrer dans l’explorateur"
-                    aria-label="Montrer dans l’explorateur"
+                    title={t('common.reveal')}
+                    aria-label={t('common.reveal')}
                     className="rounded p-1 text-subtle transition-colors hover:text-ink"
                   >
                     <FolderOpen className="size-3.5" />
@@ -368,7 +387,7 @@ function StepSigned({ entry, onChange }: { entry: CertEntry; onChange: () => Pro
             </ul>
             <div className="flex items-center justify-between gap-3 border-t border-line px-3 pt-2.5 pb-1 mt-1">
               <p className="text-[12px] text-subtle">
-                {dragging ? 'Deposez pour ajouter' : 'Glissez d’autres fichiers pour les ajouter.'}
+                {dragging ? t('detail.dropHere') : t('detail.dragMore')}
               </p>
               <Button
                 size="sm"
@@ -376,11 +395,11 @@ function StepSigned({ entry, onChange }: { entry: CertEntry; onChange: () => Pro
                 loading={busy}
                 icon={<FileDown className="size-3.5" />}
                 onClick={async () => {
-                  const picked = await unwrap(api.system.pickFiles('Fichiers renvoyes par la PKI'))
+                  const picked = await unwrap(api.system.pickFiles(t('dialog.pickSigned')))
                   await importFiles(picked)
                 }}
               >
-                Ajouter
+                {t('common.add')}
               </Button>
             </div>
           </div>
@@ -395,6 +414,7 @@ function StepSigned({ entry, onChange }: { entry: CertEntry; onChange: () => Pro
 // ---------------------------------------------------------------------------
 
 function StepPfx({ entry, onDone }: { entry: CertEntry; onDone: () => Promise<void> }) {
+  const t = useT()
   const toast = useToast()
   const [password, setPassword] = useState('')
   const [confirm, setConfirm] = useState('')
@@ -434,7 +454,7 @@ function StepPfx({ entry, onDone }: { entry: CertEntry; onDone: () => Promise<vo
       setPassword('')
       setConfirm('')
       setKeyPassword('')
-      toast('success', 'PFX assemble : ' + basename(res.pfxPath))
+      toast('success', t('detail.toastAssembled', { name: basename(res.pfxPath) }))
       await onDone()
     } catch (err) {
       setError(message(err))
@@ -445,17 +465,15 @@ function StepPfx({ entry, onDone }: { entry: CertEntry; onDone: () => Promise<vo
 
   return (
     <section>
-      <SectionTitle>3 · Assemblage du PFX</SectionTitle>
+      <SectionTitle>{t('detail.step3')}</SectionTitle>
 
       {!ready ? (
         <Card>
           <EmptyState
             icon={<Package className="size-5" />}
-            title="Rien a assembler"
+            title={t('detail.nothingToAssembleTitle')}
             description={
-              entry.hasKey
-                ? 'Deposez d’abord les fichiers renvoyes par la PKI a l’etape 2.'
-                : 'La cle privee est absente : le PFX ne peut pas etre construit.'
+              entry.hasKey ? t('detail.nothingToAssembleDesc') : t('detail.noKeyDesc')
             }
           />
         </Card>
@@ -465,9 +483,10 @@ function StepPfx({ entry, onDone }: { entry: CertEntry; onDone: () => Promise<vo
 
           <div className="grid gap-5 sm:grid-cols-2">
             <Field
-              label="Mot de passe du PFX"
+              label={t('detail.pfxPassword')}
               htmlFor="pfxpass"
-              hint="Il protege la cle privee dans le conteneur. Transmettez-le separement du fichier."
+              hint={t('detail.pfxPasswordHint')}
+              help={t('detail.pfxPasswordHelp')}
             >
               <div className="relative">
                 <Input
@@ -482,7 +501,7 @@ function StepPfx({ entry, onDone }: { entry: CertEntry; onDone: () => Promise<vo
                 <button
                   type="button"
                   onClick={() => setShow((v) => !v)}
-                  aria-label={show ? 'Masquer' : 'Afficher'}
+                  aria-label={show ? t('common.hide') : t('common.show')}
                   className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded p-1 text-subtle hover:text-ink"
                 >
                   {show ? <EyeOff className="size-3.5" /> : <Eye className="size-3.5" />}
@@ -491,9 +510,9 @@ function StepPfx({ entry, onDone }: { entry: CertEntry; onDone: () => Promise<vo
             </Field>
 
             <Field
-              label="Confirmation"
+              label={t('detail.confirm')}
               htmlFor="pfxpass2"
-              error={mismatch ? 'Les deux saisies different.' : null}
+              error={mismatch ? t('detail.mismatch') : null}
             >
               <Input
                 id="pfxpass2"
@@ -509,14 +528,15 @@ function StepPfx({ entry, onDone }: { entry: CertEntry; onDone: () => Promise<vo
           <details className="group">
             <summary className="cursor-pointer list-none text-[13px] font-medium text-muted transition-colors hover:text-ink">
               <span className="inline-block transition-transform group-open:rotate-90">›</span>{' '}
-              Options avancees
+              {t('detail.advancedOptions')}
             </summary>
 
             <div className="mt-4 flex flex-col gap-4 border-l-2 border-line pl-4">
               <Field
-                label="Nom convivial"
+                label={t('detail.friendlyName')}
                 htmlFor="friendly"
-                hint="Nom affiche dans le magasin de certificats Windows."
+                hint={t('detail.friendlyNameHint')}
+                help={t('detail.friendlyNameHelp')}
               >
                 <Input
                   id="friendly"
@@ -527,9 +547,10 @@ function StepPfx({ entry, onDone }: { entry: CertEntry; onDone: () => Promise<vo
               </Field>
 
               <Field
-                label="Mot de passe de la cle privee"
+                label={t('detail.keyPassword')}
                 htmlFor="keypass"
-                hint="Uniquement si la cle sur disque est chiffree."
+                hint={t('detail.keyPasswordHint')}
+                help={t('detail.keyPasswordHelp')}
               >
                 <Input
                   id="keypass"
@@ -544,21 +565,24 @@ function StepPfx({ entry, onDone }: { entry: CertEntry; onDone: () => Promise<vo
                 <Checkbox
                   checked={noPass}
                   onChange={setNoPass}
-                  label="PFX sans mot de passe"
-                  hint="La cle privee ne sera plus protegee dans le conteneur."
+                  label={t('detail.noPass')}
+                  hint={t('detail.noPassHint')}
+                  help={t('detail.noPassHelp')}
                   tone="danger"
                 />
                 <Checkbox
                   checked={compat}
                   onChange={setCompat}
-                  label="Chiffrement compatible (3DES / SHA-1)"
-                  hint="Pour Windows anterieur a 2016, Java 8 et les anciens F5. Moins sur qu’AES-256."
+                  label={t('detail.compat')}
+                  hint={t('detail.compatHint')}
+                  help={t('detail.compatHelp')}
                 />
                 <Checkbox
                   checked={noRoot}
                   onChange={setNoRoot}
-                  label="Exclure la CA racine"
-                  hint="La racine est deja dans le magasin de confiance de la plupart des systemes."
+                  label={t('detail.noRoot')}
+                  hint={t('detail.noRootHint')}
+                  help={t('detail.noRootHelp')}
                 />
               </div>
             </div>
@@ -572,37 +596,37 @@ function StepPfx({ entry, onDone }: { entry: CertEntry; onDone: () => Promise<vo
               onClick={() => void run()}
               icon={<Package className="size-4" />}
             >
-              Assembler le PFX
+              {t('detail.assemble')}
             </Button>
             {entry.hasPfx && !result && (
-              <p className="text-[12px] text-warn">Un PFX existe deja : il sera remplace.</p>
+              <p className="text-[12px] text-warn">{t('detail.pfxExists')}</p>
             )}
           </div>
         </Card>
       )}
 
-      {result && <PfxOutcome result={result} />}
+      {result && <PfxOutcome result={result} t={t} />}
     </section>
   )
 }
 
 // ---------------------------------------------------------------------------
 
-function PfxOutcome({ result }: { result: PfxResult }) {
+function PfxOutcome({ result, t }: { result: PfxResult; t: Translate }) {
   return (
     <div className="mt-4 flex flex-col gap-4">
       <Card className="p-5">
         <h3 className="mb-3 flex items-center gap-2 font-medium">
           <ShieldCheck className="size-4 text-ok" />
-          Chaine de confiance
+          {t('detail.chainTitle')}
         </h3>
 
         <ol className="flex flex-col">
-          <ChainNode label="Certificat serveur" info={result.leaf} tone="text-ok" />
+          <ChainNode label={t('detail.leafLabel')} info={result.leaf} tone="text-ok" />
           {result.chain.map((c) => (
             <ChainNode
               key={c.fingerprint}
-              label={c.selfSigned ? 'CA racine' : 'CA intermediaire'}
+              label={c.selfSigned ? t('detail.rootCa') : t('detail.intermediateCa')}
               info={c}
               tone="text-muted"
             />
@@ -612,7 +636,7 @@ function PfxOutcome({ result }: { result: PfxResult }) {
         {result.unused.length > 0 && (
           <div className="mt-4 border-t border-line pt-3">
             <p className="mb-1.5 text-[12px] text-subtle">
-              Non utilises ({result.unused.length}) — hors de la chaine de ce certificat :
+              {t('detail.unused', { n: result.unused.length })}
             </p>
             <ul className="flex flex-col gap-0.5">
               {result.unused.map((c) => (
@@ -626,7 +650,7 @@ function PfxOutcome({ result }: { result: PfxResult }) {
       </Card>
 
       <Card className="p-5">
-        <h3 className="mb-3 font-medium">Controles</h3>
+        <h3 className="mb-3 font-medium">{t('detail.checksTitle')}</h3>
         <ul className="flex flex-col gap-2">
           {result.checks.map((c, i) => (
             <CheckLine key={i} check={c} />
@@ -635,18 +659,20 @@ function PfxOutcome({ result }: { result: PfxResult }) {
       </Card>
 
       <Card className="p-5">
-        <h3 className="mb-3 font-medium">Fichiers produits</h3>
+        <h3 className="mb-3 font-medium">{t('detail.filesTitle')}</h3>
         <div className="flex flex-col gap-1">
-          <FileLine path={result.pfxPath} label="PKCS#12" primary />
-          <FileLine path={result.crtPath} label="Certificat seul" />
-          {result.chainPath && <FileLine path={result.chainPath} label="Chaine de CA" />}
+          <FileLine path={result.pfxPath} label={t('detail.filePfx')} t={t} primary />
+          <FileLine path={result.crtPath} label={t('detail.fileCrt')} t={t} />
+          {result.chainPath && (
+            <FileLine path={result.chainPath} label={t('detail.fileChain')} t={t} />
+          )}
           {result.fullchainPath && (
-            <FileLine path={result.fullchainPath} label="Feuille + chaine · nginx, HAProxy" />
+            <FileLine path={result.fullchainPath} label={t('detail.fileFullchain')} t={t} />
           )}
         </div>
 
         <div className="mt-4 border-t border-line pt-4">
-          <p className="mb-1.5 text-[12px] text-subtle">Import dans le magasin Windows :</p>
+          <p className="mb-1.5 text-[12px] text-subtle">{t('detail.importWindows')}</p>
           <code className="block overflow-x-auto rounded-lg bg-sunken p-3 font-mono text-[11.5px] text-muted selectable">
             Import-PfxCertificate -FilePath '{result.pfxPath}' -CertStoreLocation
             Cert:\LocalMachine\My -Password (Read-Host -AsSecureString)
@@ -668,7 +694,7 @@ function ChainNode({ label, info, tone }: { label: string; info: CertInfo; tone:
       <p className={cx('text-[11px] font-medium uppercase tracking-wide', tone)}>{label}</p>
       <p className="truncate text-[13px] selectable">{commonName(info.subject)}</p>
       <p className="text-[12px] text-subtle">
-        {shortDate(info.notBefore)} — {shortDate(info.notAfter)} · {info.keyDesc}
+        {shortDate(info.notBefore)} / {shortDate(info.notAfter)} · {info.keyDesc}
       </p>
     </li>
   )
@@ -696,7 +722,17 @@ function CheckLine({ check }: { check: CheckResult }) {
   )
 }
 
-function FileLine({ path, label, primary }: { path: string; label: string; primary?: boolean }) {
+function FileLine({
+  path,
+  label,
+  primary,
+  t,
+}: {
+  path: string
+  label: string
+  primary?: boolean
+  t: Translate
+}) {
   return (
     <div
       className={cx(
@@ -713,8 +749,8 @@ function FileLine({ path, label, primary }: { path: string; label: string; prima
       </div>
       <button
         onClick={() => void api.system.reveal(path)}
-        title="Montrer dans l’explorateur"
-        aria-label="Montrer dans l’explorateur"
+        title={t('common.reveal')}
+        aria-label={t('common.reveal')}
         className="shrink-0 rounded p-1 text-subtle transition-colors hover:text-ink"
       >
         <FolderOpen className="size-3.5" />

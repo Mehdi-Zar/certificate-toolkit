@@ -2,10 +2,10 @@
  * Etape 1 : le choix d'un modele, puis la demande, puis la CSR produite.
  *
  * Le formulaire tient en deux niveaux. Par defaut on ne voit que ce qui change
- * d'une demande a l'autre — le nom, les noms alternatifs, l'organisation ; le
+ * d'une demande a l'autre : le nom, les noms alternatifs, l'organisation. Le
  * mode avance ouvre chaque extension X.509. Dans les deux cas un apercu montre
  * en direct la configuration qui sera passee a openssl et les incoherences
- * detectees.
+ * detectees, et chaque choix porte une infobulle qui l'explique.
  */
 import {
   ArrowLeft,
@@ -31,8 +31,9 @@ import {
 } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
+import type { Translate } from '../../shared/i18n/index.ts'
 import {
-  CATEGORY_LABEL,
+  CATEGORY_KEY,
   EKU_CATALOG,
   KEY_USAGE_CATALOG,
   TEMPLATES,
@@ -55,6 +56,7 @@ import type {
 } from '../../shared/types.ts'
 import type { Route } from '../App.tsx'
 import { Disclosure, SanEditor, StringList, ToggleGrid } from '../components/fields.tsx'
+import { Hint } from '../components/Hint.tsx'
 import { PageBody, PageHeader } from '../components/PageHeader.tsx'
 import { useToast } from '../components/Toast.tsx'
 import {
@@ -72,7 +74,7 @@ import {
   cx,
 } from '../components/ui.tsx'
 import { api, message, unwrap } from '../lib/api.ts'
-import { useApp } from '../lib/store.tsx'
+import { useApp, useT } from '../lib/store.tsx'
 
 // ---------------------------------------------------------------------------
 // Utilitaires partages avec le moteur (memes regles, cote interface)
@@ -190,12 +192,13 @@ function TemplatePicker({
   navigate: (r: Route) => void
   onPick: (id: string) => void
 }) {
+  const t = useT()
   const categories = useMemo(() => {
     const map = new Map<TemplateCategory, Template[]>()
-    for (const t of TEMPLATES) {
-      const list = map.get(t.category) ?? []
-      list.push(t)
-      map.set(t.category, list)
+    for (const tpl of TEMPLATES) {
+      const list = map.get(tpl.category) ?? []
+      list.push(tpl)
+      map.set(tpl.category, list)
     }
     return [...map.entries()]
   }, [])
@@ -203,32 +206,41 @@ function TemplatePicker({
   return (
     <>
       <PageHeader
-        title="A quoi servira ce certificat ?"
-        description="Choisissez l’usage : les extensions X.509 correspondantes seront pre-remplies. Tout reste modifiable ensuite."
-        back={<BackLink label="Certificats" onClick={() => navigate({ name: 'list' })} />}
+        title={t('new.pickerTitle')}
+        description={t('new.pickerDesc')}
+        back={<BackLink label={t('new.backToList')} onClick={() => navigate({ name: 'list' })} />}
       />
       <PageBody>
         {categories.map(([category, list]) => (
           <section key={category}>
-            <SectionTitle>{CATEGORY_LABEL[category]}</SectionTitle>
+            <SectionTitle>{t(CATEGORY_KEY[category])}</SectionTitle>
             <div className="grid gap-2 sm:grid-cols-2">
-              {list.map((t) => (
-                <button
-                  key={t.id}
-                  onClick={() => onPick(t.id)}
+              {list.map((tpl) => (
+                <div
+                  key={tpl.id}
                   className={cx(
-                    'group flex gap-3 rounded-[var(--radius-panel)] border border-line bg-surface p-4 text-left',
+                    'group relative flex gap-3 rounded-[var(--radius-panel)] border border-line bg-surface p-4',
                     'transition-colors hover:border-accent/45 hover:bg-accent-soft/35',
                   )}
                 >
-                  <span className="mt-0.5 grid size-8 shrink-0 place-items-center rounded-lg bg-inset text-muted transition-colors group-hover:bg-accent group-hover:text-accent-fg">
-                    {ICONS[t.icon] ?? <ShieldCheck className="size-4" />}
+                  <button
+                    onClick={() => onPick(tpl.id)}
+                    aria-label={t(tpl.labelKey)}
+                    className="absolute inset-0 rounded-[var(--radius-panel)]"
+                  />
+                  <span className="pointer-events-none relative mt-0.5 grid size-8 shrink-0 place-items-center rounded-lg bg-inset text-muted transition-colors group-hover:bg-accent group-hover:text-accent-fg">
+                    {ICONS[tpl.icon] ?? <ShieldCheck className="size-4" />}
                   </span>
-                  <span className="min-w-0">
-                    <span className="block text-[13px] font-medium">{t.label}</span>
-                    <span className="mt-0.5 block text-[12px] text-subtle leading-relaxed">{t.pitch}</span>
+                  <span className="pointer-events-none relative min-w-0 flex-1">
+                    <span className="block text-[13px] font-medium">{t(tpl.labelKey)}</span>
+                    <span className="mt-0.5 block text-[12px] text-subtle leading-relaxed">
+                      {t(tpl.pitchKey)}
+                    </span>
                   </span>
-                </button>
+                  <span className="relative mt-0.5 shrink-0">
+                    <Hint text={t(tpl.detailKey)} label={t(tpl.labelKey)} />
+                  </span>
+                </div>
               ))}
             </div>
           </section>
@@ -254,6 +266,7 @@ function RequestForm({
   navigate: (r: Route) => void
 }) {
   const { settings, probe, refresh } = useApp()
+  const t = useT()
   const toast = useToast()
   const template = getTemplate(templateId)
 
@@ -288,7 +301,12 @@ function RequestForm({
         state: c.subject.state || settings.defaults.state,
         locality: c.subject.locality || settings.defaults.locality,
         org: c.subject.org || settings.defaults.org,
-        ous: c.subject.ous.length > 0 ? c.subject.ous : settings.defaults.ou ? [settings.defaults.ou] : [],
+        ous:
+          c.subject.ous.length > 0
+            ? c.subject.ous
+            : settings.defaults.ou
+              ? [settings.defaults.ou]
+              : [],
         email: c.subject.email || settings.defaults.email,
       },
     }))
@@ -314,14 +332,15 @@ function RequestForm({
   }, [req])
 
   const errors = preview?.warnings.filter((w) => w.level === 'error') ?? []
-  const canSubmit = errors.length === 0 && !!req.subject.commonName.trim() && !!probe?.available
+  const started = req.subject.commonName.trim().length > 0
+  const canSubmit = errors.length === 0 && started && !!probe?.available
 
   async function submit() {
     setBusy(true)
     setError(null)
     try {
       const res = await unwrap(api.csr.generate(req))
-      toast('success', 'CSR generee pour ' + res.name)
+      toast('success', t('new.toastGenerated', { name: res.name }))
       await refresh()
       onDone(res)
     } catch (err) {
@@ -331,24 +350,26 @@ function RequestForm({
     }
   }
 
-  const started = req.subject.commonName.trim().length > 0
   const implicitSan = started && template.cnAsSan ? guessSan(req.subject.commonName) : null
   const isRsa = req.key.algorithm === 'rsa' || req.key.algorithm === 'rsa-pss'
 
   return (
     <>
       <PageHeader
-        title={template.label}
-        description={template.detail}
-        back={<BackLink label="Changer de modele" onClick={onBack} />}
+        title={t(template.labelKey)}
+        description={t(template.detailKey)}
+        back={<BackLink label={t('new.backToPicker')} onClick={onBack} />}
         actions={
-          <div className="flex items-center gap-0.5 rounded-lg bg-inset p-0.5">
-            <ModeTab active={!advanced} onClick={() => setAdvanced(false)}>
-              Simple
-            </ModeTab>
-            <ModeTab active={advanced} onClick={() => setAdvanced(true)}>
-              Avance
-            </ModeTab>
+          <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-0.5 rounded-lg bg-inset p-0.5">
+              <ModeTab active={!advanced} onClick={() => setAdvanced(false)}>
+                {t('new.modeSimple')}
+              </ModeTab>
+              <ModeTab active={advanced} onClick={() => setAdvanced(true)}>
+                {t('new.modeAdvanced')}
+              </ModeTab>
+            </div>
+            <Hint text={t('new.modeHelp')} />
           </div>
         }
       />
@@ -357,28 +378,25 @@ function RequestForm({
         <div className="flex min-w-0 flex-1 flex-col gap-4">
           {error && <ErrorBanner>{error}</ErrorBanner>}
 
-          {template.notes.map((n) => (
-            <Note key={n} tone="info">
-              {n}
+          {template.noteKeys.map((k) => (
+            <Note key={k} tone="info">
+              {t(k)}
             </Note>
           ))}
 
           {/* ---------------------------------------------------------- */}
           <Card className="flex flex-col gap-5 p-5">
             <Field
-              label={template.commonNameLabel}
+              label={t(template.cnKey)}
               htmlFor="cn"
-              hint={
-                template.cnAsSan
-                  ? 'Devient automatiquement le premier nom alternatif.'
-                  : 'Le nom du titulaire. Il n’est pas ajoute aux noms alternatifs pour ce modele.'
-              }
+              hint={template.cnAsSan ? t('new.cnHelpAsSan') : t('new.cnHelpNotSan')}
+              help={t(template.detailKey)}
             >
               <Input
                 id="cn"
                 value={req.subject.commonName}
                 onChange={(e) => patch((d) => void (d.subject.commonName = e.target.value))}
-                placeholder={template.commonNamePlaceholder}
+                placeholder={t(template.cnPlaceholderKey)}
                 autoFocus
                 spellCheck={false}
                 autoComplete="off"
@@ -386,15 +404,17 @@ function RequestForm({
             </Field>
 
             <Field
-              label="Noms alternatifs (SAN)"
-              hint={template.sanHint}
-              // Tant que rien n'est saisi, on n'a rien a reprocher.
+              label={t('new.sanLabel')}
+              hint={t(template.sanHintKey)}
+              help={t('new.sanHelp')}
               error={started ? (errors.find((e) => e.field === 'sans')?.message ?? null) : null}
             >
               <SanEditor
                 sans={req.sans}
                 onChange={(next) => patch((d) => void (d.sans = next))}
-                allowed={advanced ? ['DNS', 'IP', 'email', 'URI', 'UPN', 'RID', 'otherName'] : template.sanTypes}
+                allowed={
+                  advanced ? ['DNS', 'IP', 'email', 'URI', 'UPN', 'RID', 'otherName'] : template.sanTypes
+                }
                 guess={guessSan}
                 implicit={implicitSan}
               />
@@ -402,9 +422,10 @@ function RequestForm({
 
             {advanced && (
               <Field
-                label="Nom du dossier de travail"
+                label={t('new.folderLabel')}
                 htmlFor="name"
-                hint="Sert de nom de dossier et de prefixe aux fichiers. Derive du nom ci-dessus par defaut."
+                hint={t('new.folderHint')}
+                help={t('new.folderHelp')}
                 error={errors.find((e) => e.field === 'name')?.message ?? null}
               >
                 <Input
@@ -420,23 +441,27 @@ function RequestForm({
             )}
           </Card>
 
-          {/* ---------------------------------------------------------- */}
-          <SubjectSection req={req} patch={patch} advanced={advanced} errors={errors} />
-
-          {/* ---------------------------------------------------------- */}
-          <KeySection req={req} patch={patch} advanced={advanced} caps={caps} isRsa={isRsa} errors={errors} />
-
-          {/* ---------------------------------------------------------- */}
-          {advanced && <ExtensionsSection req={req} patch={patch} />}
-          {advanced && <PkiSection req={req} patch={patch} />}
+          <SubjectSection req={req} patch={patch} advanced={advanced} errors={errors} t={t} />
+          <KeySection
+            req={req}
+            patch={patch}
+            advanced={advanced}
+            caps={caps}
+            isRsa={isRsa}
+            errors={errors}
+            t={t}
+          />
+          {advanced && <ExtensionsSection req={req} patch={patch} t={t} />}
+          {advanced && <PkiSection req={req} patch={patch} t={t} />}
 
           <Card className="p-5">
             <Checkbox
               checked={req.force}
               onChange={(v) => patch((d) => void (d.force = v))}
               tone="danger"
-              label="Ecraser une cle privee existante"
-              hint="Si une CSR est deja partie chez la PKI, le certificat a venir deviendra inutilisable."
+              label={t('new.force')}
+              hint={t('new.forceHint')}
+              help={t('new.forceHelp')}
             />
           </Card>
 
@@ -448,21 +473,29 @@ function RequestForm({
               onClick={() => void submit()}
               icon={<Sparkles className="size-4" />}
             >
-              Generer la cle et la CSR
+              {t('new.submit')}
             </Button>
             <Button variant="ghost" onClick={() => navigate({ name: 'list' })}>
-              Annuler
+              {t('common.cancel')}
             </Button>
           </div>
         </div>
 
-        <PreviewPanel preview={preview} name={req.name} started={started} />
+        <PreviewPanel preview={preview} name={req.name} started={started} t={t} />
       </div>
     </>
   )
 }
 
-function ModeTab({ active, onClick, children }: { active: boolean; onClick: () => void; children: string }) {
+function ModeTab({
+  active,
+  onClick,
+  children,
+}: {
+  active: boolean
+  onClick: () => void
+  children: string
+}) {
   return (
     <button
       onClick={onClick}
@@ -481,83 +514,159 @@ function ModeTab({ active, onClick, children }: { active: boolean; onClick: () =
 
 type Patch = (fn: (draft: CsrRequest) => void) => void
 
+interface SectionProps {
+  req: CsrRequest
+  patch: Patch
+  t: Translate
+}
+
 function SubjectSection({
   req,
   patch,
   advanced,
   errors,
-}: {
-  req: CsrRequest
-  patch: Patch
-  advanced: boolean
-  errors: Warning[]
-}) {
+  t,
+}: SectionProps & { advanced: boolean; errors: Warning[] }) {
   const s = req.subject
   const body = (
     <div className="flex flex-col gap-5">
       <div className="grid gap-5 sm:grid-cols-2">
-        <Field label="Pays (C)" htmlFor="c" error={errors.find((e) => e.field === 'country')?.message ?? null}>
-          <Input id="c" maxLength={2} value={s.country} onChange={(e) => patch((d) => void (d.subject.country = e.target.value.toUpperCase()))} />
+        <Field
+          label={t('field.country')}
+          htmlFor="c"
+          help={t('field.country.help')}
+          error={errors.find((e) => e.field === 'country')?.message ?? null}
+        >
+          <Input
+            id="c"
+            maxLength={2}
+            value={s.country}
+            onChange={(e) => patch((d) => void (d.subject.country = e.target.value.toUpperCase()))}
+          />
         </Field>
-        <Field label="Organisation (O)" htmlFor="o">
-          <Input id="o" value={s.org} onChange={(e) => patch((d) => void (d.subject.org = e.target.value))} />
+        <Field label={t('field.org')} htmlFor="o" help={t('field.org.help')}>
+          <Input
+            id="o"
+            value={s.org}
+            onChange={(e) => patch((d) => void (d.subject.org = e.target.value))}
+          />
         </Field>
       </div>
 
-      <Field label="Unites d’organisation (OU)" hint="Repetable : une ligne par niveau hierarchique.">
+      <Field label={t('field.ous')} hint={t('field.ous.hint')} help={t('field.ous.help')}>
         <StringList
           values={s.ous}
           onChange={(next) => patch((d) => void (d.subject.ous = next))}
-          placeholder="Direction des systemes d’information"
+          placeholder="Direction"
         />
       </Field>
 
-      <Field label="Email" htmlFor="mail" hint="Dans le DN. Pour du S/MIME, c’est le SAN email qui compte.">
-        <Input id="mail" type="email" value={s.email} onChange={(e) => patch((d) => void (d.subject.email = e.target.value))} />
+      <Field
+        label={t('field.email')}
+        htmlFor="mail"
+        hint={t('field.email.hint')}
+        help={t('field.email.help')}
+      >
+        <Input
+          id="mail"
+          type="email"
+          value={s.email}
+          onChange={(e) => patch((d) => void (d.subject.email = e.target.value))}
+        />
       </Field>
 
       {advanced && (
         <>
           <div className="grid gap-5 sm:grid-cols-2">
-            <Field label="Region / Etat (ST)" htmlFor="st">
-              <Input id="st" value={s.state} onChange={(e) => patch((d) => void (d.subject.state = e.target.value))} />
+            <Field label={t('field.state')} htmlFor="st" help={t('field.state.help')}>
+              <Input
+                id="st"
+                value={s.state}
+                onChange={(e) => patch((d) => void (d.subject.state = e.target.value))}
+              />
             </Field>
-            <Field label="Ville (L)" htmlFor="l">
-              <Input id="l" value={s.locality} onChange={(e) => patch((d) => void (d.subject.locality = e.target.value))} />
+            <Field label={t('field.locality')} htmlFor="l" help={t('field.locality.help')}>
+              <Input
+                id="l"
+                value={s.locality}
+                onChange={(e) => patch((d) => void (d.subject.locality = e.target.value))}
+              />
             </Field>
-            <Field label="Rue" htmlFor="street">
-              <Input id="street" value={s.street} onChange={(e) => patch((d) => void (d.subject.street = e.target.value))} />
+            <Field label={t('field.street')} htmlFor="street" help={t('field.street.help')}>
+              <Input
+                id="street"
+                value={s.street}
+                onChange={(e) => patch((d) => void (d.subject.street = e.target.value))}
+              />
             </Field>
-            <Field label="Code postal" htmlFor="pc">
-              <Input id="pc" value={s.postalCode} onChange={(e) => patch((d) => void (d.subject.postalCode = e.target.value))} />
+            <Field label={t('field.postalCode')} htmlFor="pc" help={t('field.postalCode.help')}>
+              <Input
+                id="pc"
+                value={s.postalCode}
+                onChange={(e) => patch((d) => void (d.subject.postalCode = e.target.value))}
+              />
             </Field>
           </div>
 
           <div className="grid gap-5 sm:grid-cols-2">
-            <Field label="Prenom" htmlFor="gn">
-              <Input id="gn" value={s.givenName} onChange={(e) => patch((d) => void (d.subject.givenName = e.target.value))} />
+            <Field label={t('field.givenName')} htmlFor="gn" help={t('field.givenName.help')}>
+              <Input
+                id="gn"
+                value={s.givenName}
+                onChange={(e) => patch((d) => void (d.subject.givenName = e.target.value))}
+              />
             </Field>
-            <Field label="Nom de famille" htmlFor="sn">
-              <Input id="sn" value={s.surname} onChange={(e) => patch((d) => void (d.subject.surname = e.target.value))} />
+            <Field label={t('field.surname')} htmlFor="sn" help={t('field.surname.help')}>
+              <Input
+                id="sn"
+                value={s.surname}
+                onChange={(e) => patch((d) => void (d.subject.surname = e.target.value))}
+              />
             </Field>
-            <Field label="Fonction" htmlFor="ti">
-              <Input id="ti" value={s.title} onChange={(e) => patch((d) => void (d.subject.title = e.target.value))} />
+            <Field label={t('field.title')} htmlFor="ti" help={t('field.title.help')}>
+              <Input
+                id="ti"
+                value={s.title}
+                onChange={(e) => patch((d) => void (d.subject.title = e.target.value))}
+              />
             </Field>
-            <Field label="Identifiant (UID)" htmlFor="uid">
-              <Input id="uid" value={s.uid} onChange={(e) => patch((d) => void (d.subject.uid = e.target.value))} />
+            <Field label={t('field.uid')} htmlFor="uid" help={t('field.uid.help')}>
+              <Input
+                id="uid"
+                value={s.uid}
+                onChange={(e) => patch((d) => void (d.subject.uid = e.target.value))}
+              />
             </Field>
           </div>
 
           <div className="grid gap-5 sm:grid-cols-2">
-            <Field label="Numero de serie" htmlFor="serial" hint="Identifiant unique impose par certaines PKI.">
-              <Input id="serial" value={s.serialNumber} onChange={(e) => patch((d) => void (d.subject.serialNumber = e.target.value))} />
+            <Field
+              label={t('field.serialNumber')}
+              htmlFor="serial"
+              hint={t('field.serialNumber.hint')}
+              help={t('field.serialNumber.help')}
+            >
+              <Input
+                id="serial"
+                value={s.serialNumber}
+                onChange={(e) => patch((d) => void (d.subject.serialNumber = e.target.value))}
+              />
             </Field>
-            <Field label="Categorie d’entreprise" htmlFor="bc" hint="Certificats a validation etendue (EV).">
-              <Input id="bc" value={s.businessCategory} onChange={(e) => patch((d) => void (d.subject.businessCategory = e.target.value))} />
+            <Field
+              label={t('field.businessCategory')}
+              htmlFor="bc"
+              hint={t('field.businessCategory.hint')}
+              help={t('field.businessCategory.help')}
+            >
+              <Input
+                id="bc"
+                value={s.businessCategory}
+                onChange={(e) => patch((d) => void (d.subject.businessCategory = e.target.value))}
+              />
             </Field>
           </div>
 
-          <Field label="Composants de domaine (DC)" hint="Style annuaire : « exemple », « fr » donne DC=exemple,DC=fr.">
+          <Field label={t('field.dc')} hint={t('field.dc.hint')} help={t('field.dc.help')}>
             <StringList
               values={s.domainComponents}
               onChange={(next) => patch((d) => void (d.subject.domainComponents = next))}
@@ -570,7 +679,7 @@ function SubjectSection({
   )
 
   return advanced ? (
-    <Disclosure title="Sujet du certificat" hint="Qui demande ce certificat (le DN)." defaultOpen>
+    <Disclosure title={t('new.subjectTitle')} hint={t('new.subjectHint')} defaultOpen>
       {body}
     </Disclosure>
   ) : (
@@ -587,9 +696,8 @@ function KeySection({
   caps,
   isRsa,
   errors,
-}: {
-  req: CsrRequest
-  patch: Patch
+  t,
+}: SectionProps & {
   advanced: boolean
   caps: Capabilities | null
   isRsa: boolean
@@ -597,11 +705,11 @@ function KeySection({
 }) {
   const algorithms: Array<{ value: KeyAlgorithm; label: string; available: boolean }> = [
     { value: 'rsa', label: 'RSA', available: true },
-    { value: 'ec', label: 'EC (courbe elliptique)', available: true },
+    { value: 'ec', label: 'EC', available: true },
     { value: 'rsa-pss', label: 'RSA-PSS', available: caps?.rsaPss ?? false },
     { value: 'ed25519', label: 'Ed25519', available: caps?.ed25519 ?? false },
     { value: 'ed448', label: 'Ed448', available: caps?.ed448 ?? false },
-    { value: 'ml-dsa', label: 'ML-DSA (post-quantique)', available: caps?.mldsa ?? false },
+    { value: 'ml-dsa', label: 'ML-DSA', available: caps?.mldsa ?? false },
   ]
   const digests: Digest[] = caps?.sha3
     ? ['sha256', 'sha384', 'sha512', 'sha3-256', 'sha3-384', 'sha3-512']
@@ -611,7 +719,7 @@ function KeySection({
   const body = (
     <div className="flex flex-col gap-5">
       <div className="grid gap-5 sm:grid-cols-2">
-        <Field label="Type de cle" htmlFor="alg">
+        <Field label={t('field.keyType')} htmlFor="alg" help={t('field.keyType.help')}>
           <Select
             id="alg"
             value={req.key.algorithm}
@@ -629,8 +737,18 @@ function KeySection({
         </Field>
 
         {isRsa && (
-          <Field label="Taille" htmlFor="bits" hint="2048 suffit partout ; 3072 pour la signature de code." error={errors.find((e) => e.field === 'key')?.message ?? null}>
-            <Select id="bits" value={req.key.bits} onChange={(e) => patch((d) => void (d.key.bits = Number(e.target.value)))}>
+          <Field
+            label={t('field.bits')}
+            htmlFor="bits"
+            hint={t('field.bits.hint')}
+            help={t('field.bits.help')}
+            error={errors.find((e) => e.field === 'key')?.message ?? null}
+          >
+            <Select
+              id="bits"
+              value={req.key.bits}
+              onChange={(e) => patch((d) => void (d.key.bits = Number(e.target.value)))}
+            >
               {[2048, 3072, 4096, 8192].map((b) => (
                 <option key={b} value={b}>
                   {b} bits
@@ -641,8 +759,17 @@ function KeySection({
         )}
 
         {req.key.algorithm === 'ec' && (
-          <Field label="Courbe" htmlFor="curve" hint="prime256v1 est le choix universel.">
-            <Select id="curve" value={req.key.curve} onChange={(e) => patch((d) => void (d.key.curve = e.target.value))}>
+          <Field
+            label={t('field.curve')}
+            htmlFor="curve"
+            hint={t('field.curve.hint')}
+            help={t('field.curve.help')}
+          >
+            <Select
+              id="curve"
+              value={req.key.curve}
+              onChange={(e) => patch((d) => void (d.key.curve = e.target.value))}
+            >
               {(caps?.curves ?? ['prime256v1']).map((c) => (
                 <option key={c} value={c}>
                   {c}
@@ -653,8 +780,19 @@ function KeySection({
         )}
 
         {req.key.algorithm === 'ml-dsa' && (
-          <Field label="Niveau" htmlFor="ml" hint="65 correspond a la robustesse d’AES-192.">
-            <Select id="ml" value={req.key.mldsaLevel} onChange={(e) => patch((d) => void (d.key.mldsaLevel = e.target.value as '44' | '65' | '87'))}>
+          <Field
+            label={t('field.mldsaLevel')}
+            htmlFor="ml"
+            hint={t('field.mldsaLevel.hint')}
+            help={t('field.mldsaLevel.help')}
+          >
+            <Select
+              id="ml"
+              value={req.key.mldsaLevel}
+              onChange={(e) =>
+                patch((d) => void (d.key.mldsaLevel = e.target.value as '44' | '65' | '87'))
+              }
+            >
               <option value="44">ML-DSA-44</option>
               <option value="65">ML-DSA-65</option>
               <option value="87">ML-DSA-87</option>
@@ -663,11 +801,15 @@ function KeySection({
         )}
 
         {advanced && !noDigest && (
-          <Field label="Empreinte de signature" htmlFor="dg">
-            <Select id="dg" value={req.digest} onChange={(e) => patch((d) => void (d.digest = e.target.value as Digest))}>
+          <Field label={t('field.digest')} htmlFor="dg" help={t('field.digest.help')}>
+            <Select
+              id="dg"
+              value={req.digest}
+              onChange={(e) => patch((d) => void (d.digest = e.target.value as Digest))}
+            >
               {digests.map((d) => (
                 <option key={d} value={d}>
-                  {d.toUpperCase().replace('SHA3-', 'SHA3-')}
+                  {d.toUpperCase()}
                 </option>
               ))}
             </Select>
@@ -675,23 +817,24 @@ function KeySection({
         )}
       </div>
 
-      {noDigest && (
-        <Note tone="info">
-          {req.key.algorithm === 'ml-dsa' ? 'ML-DSA' : 'Cet algorithme'} choisit lui-meme son empreinte : le
-          reglage ne s’applique pas.
-        </Note>
-      )}
+      {noDigest && <Note tone="info">{t('new.digestImplicit')}</Note>}
 
       <div className="border-t border-line pt-1">
         <Checkbox
           checked={req.key.encrypt}
           onChange={(v) => patch((d) => void (d.key.encrypt = v))}
-          label="Chiffrer la cle privee sur le disque"
-          hint="AES-256. La phrase secrete sera demandee a chaque usage de la cle, y compris pour assembler le PFX."
+          label={t('new.encryptKey')}
+          hint={t('new.encryptKeyHint')}
+          help={t('new.encryptKeyHelp')}
         />
         {req.key.encrypt && (
           <div className="mt-3 pl-7">
-            <Field label="Phrase secrete" htmlFor="pp" error={errors.find((e) => e.field === 'passphrase')?.message ?? null}>
+            <Field
+              label={t('field.passphrase')}
+              htmlFor="pp"
+              help={t('field.passphrase.help')}
+              error={errors.find((e) => e.field === 'passphrase')?.message ?? null}
+            >
               <Input
                 id="pp"
                 type="password"
@@ -707,7 +850,7 @@ function KeySection({
   )
 
   return advanced ? (
-    <Disclosure title="Cle privee" hint="Algorithme, taille et protection au repos." defaultOpen>
+    <Disclosure title={t('new.keyTitle')} hint={t('new.keyHint')} defaultOpen>
       {body}
     </Disclosure>
   ) : (
@@ -717,44 +860,43 @@ function KeySection({
 
 // ---------------------------------------------------------------------------
 
-function ExtensionsSection({ req, patch }: { req: CsrRequest; patch: Patch }) {
+function ExtensionsSection({ req, patch, t }: SectionProps) {
   const ext = req.extensions
   const [customOid, setCustomOid] = useState('')
 
   const knownEku = new Set(EKU_CATALOG.map((e) => e.value))
   const extraOids = ext.extendedKeyUsage.purposes.filter((p) => !knownEku.has(p))
 
+  const summary =
+    [
+      ext.keyUsage.include && t('new.extSummaryUsages', { n: ext.keyUsage.bits.length }),
+      ext.extendedKeyUsage.include &&
+        t('new.extSummaryEku', { n: ext.extendedKeyUsage.purposes.length }),
+      ext.mustStaple && 'must-staple',
+      ext.basicConstraints.ca && 'CA',
+    ]
+      .filter(Boolean)
+      .join(' · ') || t('new.extNone')
+
   return (
     <Disclosure
-      title="Extensions X.509"
-      hint="Ce que le certificat aura le droit de faire."
-      badge={
-        <Badge tone="bg-inset text-muted">
-          {[
-            ext.keyUsage.include && ext.keyUsage.bits.length + ' usages',
-            ext.extendedKeyUsage.include && ext.extendedKeyUsage.purposes.length + ' etendus',
-            ext.mustStaple && 'must-staple',
-            ext.basicConstraints.ca && 'CA',
-          ]
-            .filter(Boolean)
-            .join(' · ') || 'aucune'}
-        </Badge>
-      }
+      title={t('new.extTitle')}
+      hint={t('new.extHint')}
+      badge={<Badge tone="bg-inset text-muted">{summary}</Badge>}
     >
       <div className="flex flex-col gap-6">
         {/* keyUsage ------------------------------------------------- */}
         <div>
           <div className="mb-2.5 flex items-center justify-between gap-4">
-            <span className="text-[13px] font-medium">Usages de la cle</span>
-            <label className="flex cursor-pointer items-center gap-1.5 text-[12px] text-subtle">
-              <input
-                type="checkbox"
-                checked={ext.keyUsage.critical}
-                onChange={(e) => patch((d) => void (d.extensions.keyUsage.critical = e.target.checked))}
-                className="size-3.5 accent-[var(--accent)]"
-              />
-              critique
-            </label>
+            <span className="flex items-center gap-1.5 text-[13px] font-medium">
+              {t('new.keyUsageTitle')}
+              <Hint text={t('new.keyUsageHelp')} label={t('new.keyUsageTitle')} />
+            </span>
+            <CriticalToggle
+              checked={ext.keyUsage.critical}
+              onChange={(v) => patch((d) => void (d.extensions.keyUsage.critical = v))}
+              t={t}
+            />
           </div>
           <ToggleGrid
             options={KEY_USAGE_CATALOG}
@@ -771,16 +913,15 @@ function ExtensionsSection({ req, patch }: { req: CsrRequest; patch: Patch }) {
         {/* EKU ------------------------------------------------------ */}
         <div className="border-t border-line pt-5">
           <div className="mb-2.5 flex items-center justify-between gap-4">
-            <span className="text-[13px] font-medium">Usages etendus</span>
-            <label className="flex cursor-pointer items-center gap-1.5 text-[12px] text-subtle">
-              <input
-                type="checkbox"
-                checked={ext.extendedKeyUsage.critical}
-                onChange={(e) => patch((d) => void (d.extensions.extendedKeyUsage.critical = e.target.checked))}
-                className="size-3.5 accent-[var(--accent)]"
-              />
-              critique
-            </label>
+            <span className="flex items-center gap-1.5 text-[13px] font-medium">
+              {t('new.ekuTitle')}
+              <Hint text={t('new.ekuHelp')} label={t('new.ekuTitle')} />
+            </span>
+            <CriticalToggle
+              checked={ext.extendedKeyUsage.critical}
+              onChange={(v) => patch((d) => void (d.extensions.extendedKeyUsage.critical = v))}
+              t={t}
+            />
           </div>
           <ToggleGrid
             options={EKU_CATALOG}
@@ -794,7 +935,10 @@ function ExtensionsSection({ req, patch }: { req: CsrRequest; patch: Patch }) {
           />
 
           <div className="mt-3">
-            <p className="mb-1.5 text-[12px] text-subtle">Autre usage, par son OID :</p>
+            <p className="mb-1.5 flex items-center gap-1.5 text-[12px] text-subtle">
+              {t('new.ekuByOid')}
+              <Hint text={t('new.ekuByOidHelp')} />
+            </p>
             <div className="flex gap-2">
               <Input
                 value={customOid}
@@ -806,6 +950,7 @@ function ExtensionsSection({ req, patch }: { req: CsrRequest; patch: Patch }) {
               <Button
                 type="button"
                 size="sm"
+                className="shrink-0"
                 disabled={!/^\d+(\.\d+)+$/.test(customOid.trim())}
                 onClick={() =>
                   patch((d) => {
@@ -818,7 +963,7 @@ function ExtensionsSection({ req, patch }: { req: CsrRequest; patch: Patch }) {
                   })
                 }
               >
-                Ajouter
+                {t('common.add')}
               </Button>
             </div>
             {extraOids.length > 0 && (
@@ -834,7 +979,7 @@ function ExtensionsSection({ req, patch }: { req: CsrRequest; patch: Patch }) {
                             d.extensions.extendedKeyUsage.purposes.filter((p) => p !== oid)
                         })
                       }
-                      aria-label={'Retirer ' + oid}
+                      aria-label={t('common.remove') + ' ' + oid}
                       className="opacity-50 hover:opacity-100"
                     >
                       ×
@@ -848,7 +993,7 @@ function ExtensionsSection({ req, patch }: { req: CsrRequest; patch: Patch }) {
 
         {/* Contraintes ---------------------------------------------- */}
         <div className="flex flex-col border-t border-line pt-5">
-          <span className="mb-1.5 text-[13px] font-medium">Contraintes</span>
+          <span className="mb-1.5 text-[13px] font-medium">{t('new.constraintsTitle')}</span>
           <Checkbox
             checked={ext.basicConstraints.ca}
             onChange={(v) =>
@@ -858,12 +1003,18 @@ function ExtensionsSection({ req, patch }: { req: CsrRequest; patch: Patch }) {
               })
             }
             tone="danger"
-            label="Ce certificat est une autorite de certification"
-            hint="basicConstraints CA:TRUE. Il pourra signer d’autres certificats."
+            label={t('new.isCa')}
+            hint={t('new.isCaHint')}
+            help={t('new.isCaHelp')}
           />
           {ext.basicConstraints.ca && (
             <div className="mt-2 pl-7">
-              <Field label="Profondeur de chaine (pathlen)" htmlFor="pl" hint="0 = cette CA ne peut signer que des certificats finaux. Vide = non contraint.">
+              <Field
+                label={t('field.pathLen')}
+                htmlFor="pl"
+                hint={t('field.pathLen.hint')}
+                help={t('field.pathLen.help')}
+              >
                 <Input
                   id="pl"
                   type="number"
@@ -885,27 +1036,33 @@ function ExtensionsSection({ req, patch }: { req: CsrRequest; patch: Patch }) {
           <Checkbox
             checked={ext.subjectKeyIdentifier}
             onChange={(v) => patch((d) => void (d.extensions.subjectKeyIdentifier = v))}
-            label="Identifiant de cle du sujet"
-            hint="subjectKeyIdentifier = hash. Recommande, aide au chainage."
+            label={t('new.ski')}
+            hint={t('new.skiHint')}
+            help={t('new.skiHelp')}
           />
           <Checkbox
             checked={ext.mustStaple}
             onChange={(v) => patch((d) => void (d.extensions.mustStaple = v))}
-            label="Agrafage OCSP obligatoire"
-            hint="Le serveur devra agrafer une reponse OCSP, sinon les navigateurs refuseront la connexion."
+            label={t('new.mustStaple')}
+            hint={t('new.mustStapleHint')}
+            help={t('new.mustStapleHelp')}
           />
         </div>
 
         {/* Points de distribution ----------------------------------- */}
         <div className="flex flex-col gap-5 border-t border-line pt-5">
-          <Field label="Politiques de certification" hint="OID imposes par certaines PKI (ex. 2.23.140.1.2.2).">
+          <Field
+            label={t('field.policies')}
+            hint={t('field.policies.hint')}
+            help={t('field.policies.help')}
+          >
             <StringList
               values={ext.certificatePolicies}
               onChange={(next) => patch((d) => void (d.extensions.certificatePolicies = next))}
               placeholder="2.23.140.1.2.2"
             />
           </Field>
-          <Field label="Points de distribution de CRL" hint="URL des listes de revocation.">
+          <Field label={t('field.crl')} hint={t('field.crl.hint')} help={t('field.crl.help')}>
             <StringList
               values={ext.crlDistributionPoints}
               onChange={(next) => patch((d) => void (d.extensions.crlDistributionPoints = next))}
@@ -913,17 +1070,19 @@ function ExtensionsSection({ req, patch }: { req: CsrRequest; patch: Patch }) {
             />
           </Field>
           <div className="grid gap-5 sm:grid-cols-2">
-            <Field label="Repondeurs OCSP">
+            <Field label={t('field.ocsp')} help={t('field.ocsp.help')}>
               <StringList
                 values={ext.authorityInfoAccess.ocsp}
                 onChange={(next) => patch((d) => void (d.extensions.authorityInfoAccess.ocsp = next))}
                 placeholder="http://ocsp.exemple.fr"
               />
             </Field>
-            <Field label="Certificat de l’emetteur">
+            <Field label={t('field.caIssuers')} help={t('field.caIssuers.help')}>
               <StringList
                 values={ext.authorityInfoAccess.caIssuers}
-                onChange={(next) => patch((d) => void (d.extensions.authorityInfoAccess.caIssuers = next))}
+                onChange={(next) =>
+                  patch((d) => void (d.extensions.authorityInfoAccess.caIssuers = next))
+                }
                 placeholder="http://ca.exemple.fr/ca.crt"
               />
             </Field>
@@ -932,10 +1091,11 @@ function ExtensionsSection({ req, patch }: { req: CsrRequest; patch: Patch }) {
 
         {/* Extensions libres ---------------------------------------- */}
         <div className="border-t border-line pt-5">
-          <p className="mb-2 text-[13px] font-medium">Extensions libres</p>
-          <p className="mb-2.5 text-[12px] text-subtle">
-            Ecrites telles quelles dans la section req_ext, pour une extension qu’aucun champ ci-dessus ne couvre.
+          <p className="mb-2 flex items-center gap-1.5 text-[13px] font-medium">
+            {t('new.customExtTitle')}
+            <Hint text={t('new.customExtHelp')} label={t('new.customExtTitle')} />
           </p>
+          <p className="mb-2.5 text-[12px] text-subtle">{t('new.customExtDesc')}</p>
           {ext.custom.map((c, i) => (
             <div key={i} className="mb-2 flex gap-2">
               <Input
@@ -954,8 +1114,10 @@ function ExtensionsSection({ req, patch }: { req: CsrRequest; patch: Patch }) {
               />
               <button
                 type="button"
-                onClick={() => patch((d) => void (d.extensions.custom = d.extensions.custom.filter((_, j) => j !== i)))}
-                aria-label="Retirer"
+                onClick={() =>
+                  patch((d) => void (d.extensions.custom = d.extensions.custom.filter((_, j) => j !== i)))
+                }
+                aria-label={t('common.remove')}
                 className="shrink-0 rounded-md p-1.5 text-subtle hover:text-danger"
               >
                 ×
@@ -966,9 +1128,11 @@ function ExtensionsSection({ req, patch }: { req: CsrRequest; patch: Patch }) {
             type="button"
             size="sm"
             variant="ghost"
-            onClick={() => patch((d) => void d.extensions.custom.push({ name: '', value: '', critical: false }))}
+            onClick={() =>
+              patch((d) => void d.extensions.custom.push({ name: '', value: '', critical: false }))
+            }
           >
-            Ajouter une extension
+            {t('new.customExtAdd')}
           </Button>
         </div>
       </div>
@@ -976,16 +1140,42 @@ function ExtensionsSection({ req, patch }: { req: CsrRequest; patch: Patch }) {
   )
 }
 
+function CriticalToggle({
+  checked,
+  onChange,
+  t,
+}: {
+  checked: boolean
+  onChange: (v: boolean) => void
+  t: Translate
+}) {
+  return (
+    <span className="flex items-center gap-1.5">
+      <label className="flex cursor-pointer items-center gap-1.5 text-[12px] text-subtle">
+        <input
+          type="checkbox"
+          checked={checked}
+          onChange={(e) => onChange(e.target.checked)}
+          className="size-3.5 accent-[var(--accent)]"
+        />
+        {t('new.critical')}
+      </label>
+      <Hint text={t('new.criticalHelp')} label={t('new.critical')} />
+    </span>
+  )
+}
+
 // ---------------------------------------------------------------------------
 
-function PkiSection({ req, patch }: { req: CsrRequest; patch: Patch }) {
+function PkiSection({ req, patch, t }: SectionProps) {
   return (
-    <Disclosure title="Attributs de la demande" hint="Champs exiges par certaines PKI.">
+    <Disclosure title={t('new.attrsTitle')} hint={t('new.attrsHint')}>
       <div className="flex flex-col gap-5">
         <Field
-          label="Challenge password"
+          label={t('field.challengePassword')}
           htmlFor="cp"
-          hint="Secret partage avec la PKI, qui permettra plus tard de demander la revocation."
+          hint={t('field.challengePassword.hint')}
+          help={t('field.challengePassword.help')}
         >
           <Input
             id="cp"
@@ -994,7 +1184,12 @@ function PkiSection({ req, patch }: { req: CsrRequest; patch: Patch }) {
             autoComplete="off"
           />
         </Field>
-        <Field label="Nom non structure" htmlFor="un" hint="Texte libre transmis a la PKI.">
+        <Field
+          label={t('field.unstructuredName')}
+          htmlFor="un"
+          hint={t('field.unstructuredName.hint')}
+          help={t('field.unstructuredName.help')}
+        >
           <Input
             id="un"
             value={req.attributes.unstructuredName}
@@ -1002,9 +1197,10 @@ function PkiSection({ req, patch }: { req: CsrRequest; patch: Patch }) {
           />
         </Field>
         <Field
-          label="Encodage des chaines"
+          label={t('field.stringMask')}
           htmlFor="sm"
-          hint="utf8only convient a toutes les PKI modernes. Ne changez que si la votre le demande."
+          hint={t('field.stringMask.hint')}
+          help={t('field.stringMask.help')}
         >
           <Select
             id="sm"
@@ -1030,10 +1226,12 @@ function PreviewPanel({
   preview,
   name,
   started,
+  t,
 }: {
   preview: CsrPreview | null
   name: string
   started: boolean
+  t: Translate
 }) {
   const [tab, setTab] = useState<'config' | 'command'>('config')
 
@@ -1047,7 +1245,7 @@ function PreviewPanel({
     <aside className="flex w-full shrink-0 flex-col gap-3 lg:sticky lg:top-6 lg:w-[21rem]">
       {!started && (
         <Card className="px-4 py-3 text-[12px] text-subtle leading-relaxed">
-          Les controles de coherence s’afficheront ici au fur et a mesure de la saisie.
+          {t('new.previewIdle')}
         </Card>
       )}
 
@@ -1074,27 +1272,34 @@ function PreviewPanel({
       <Card className="overflow-hidden">
         <div className="flex items-center gap-0.5 border-b border-line px-2 py-2">
           <PreviewTab active={tab === 'config'} onClick={() => setTab('config')}>
-            Configuration
+            {t('new.previewConfig')}
           </PreviewTab>
           <PreviewTab active={tab === 'command'} onClick={() => setTab('command')}>
-            Commandes
+            {t('new.previewCommands')}
           </PreviewTab>
-          <span className="ml-auto truncate pr-1 text-[11px] text-subtle">{name || 'sans nom'}</span>
+          <span className="ml-auto truncate pr-1 text-[11px] text-subtle">
+            {name || t('new.previewUnnamed')}
+          </span>
         </div>
         <pre className="max-h-[26rem] overflow-auto bg-sunken p-3.5 font-mono text-[11px] leading-[1.6] text-muted selectable">
           {tab === 'config' ? preview?.config || '…' : preview?.command || '…'}
         </pre>
       </Card>
 
-      <p className="px-1 text-[11.5px] text-subtle leading-relaxed">
-        C’est exactement ce qui sera ecrit dans le fichier de configuration et passe a openssl. Rien
-        n’est envoye sur le reseau.
-      </p>
+      <p className="px-1 text-[11.5px] text-subtle leading-relaxed">{t('new.previewFooter')}</p>
     </aside>
   )
 }
 
-function PreviewTab({ active, onClick, children }: { active: boolean; onClick: () => void; children: string }) {
+function PreviewTab({
+  active,
+  onClick,
+  children,
+}: {
+  active: boolean
+  onClick: () => void
+  children: string
+}) {
   return (
     <button
       onClick={onClick}
@@ -1110,13 +1315,24 @@ function PreviewTab({ active, onClick, children }: { active: boolean; onClick: (
 
 function Note({ tone, children }: { tone: 'error' | 'warn' | 'info'; children: ReactNode }) {
   const style = {
-    error: { cls: 'border-danger/30 bg-danger-soft text-danger', icon: <ShieldAlert className="size-3.5" /> },
-    warn: { cls: 'border-warn/30 bg-warn-soft text-warn', icon: <TriangleAlert className="size-3.5" /> },
+    error: {
+      cls: 'border-danger/30 bg-danger-soft text-danger',
+      icon: <ShieldAlert className="size-3.5" />,
+    },
+    warn: {
+      cls: 'border-warn/30 bg-warn-soft text-warn',
+      icon: <TriangleAlert className="size-3.5" />,
+    },
     info: { cls: 'border-info/25 bg-info-soft text-info', icon: <Info className="size-3.5" /> },
   }[tone]
 
   return (
-    <div className={cx('flex items-start gap-2 rounded-lg border px-3 py-2.5 text-[12px] leading-relaxed', style.cls)}>
+    <div
+      className={cx(
+        'flex items-start gap-2 rounded-lg border px-3 py-2.5 text-[12px] leading-relaxed',
+        style.cls,
+      )}
+    >
       <span className="mt-0.5 shrink-0">{style.icon}</span>
       <span className="min-w-0 selectable">{children}</span>
     </div>
@@ -1128,6 +1344,7 @@ function Note({ tone, children }: { tone: 'error' | 'warn' | 'info'; children: R
 // ---------------------------------------------------------------------------
 
 function CsrReady({ result, navigate }: { result: CsrResult; navigate: (r: Route) => void }) {
+  const t = useT()
   const toast = useToast()
   const [copied, setCopied] = useState(false)
   const [showText, setShowText] = useState(false)
@@ -1135,7 +1352,7 @@ function CsrReady({ result, navigate }: { result: CsrResult; navigate: (r: Route
   const copy = async () => {
     await api.system.copy(result.csrPem)
     setCopied(true)
-    toast('success', 'CSR copiee dans le presse-papiers')
+    toast('success', t('new.toastCopied'))
     setTimeout(() => setCopied(false), 2000)
   }
 
@@ -1143,11 +1360,15 @@ function CsrReady({ result, navigate }: { result: CsrResult; navigate: (r: Route
     <>
       <PageHeader
         title={result.name}
-        description="La cle privee et la CSR sont ecrites. Envoyez la CSR a la PKI, puis deposez sa reponse."
-        back={<BackLink label="Certificats" onClick={() => navigate({ name: 'list' })} />}
+        description={t('new.readyDesc')}
+        back={<BackLink label={t('new.backToList')} onClick={() => navigate({ name: 'list' })} />}
         actions={
-          <Button variant="primary" size="sm" onClick={() => navigate({ name: 'detail', fqdn: result.name })}>
-            Suivre cette demande
+          <Button
+            variant="primary"
+            size="sm"
+            onClick={() => navigate({ name: 'detail', fqdn: result.name })}
+          >
+            {t('new.readyFollow')}
           </Button>
         }
       />
@@ -1156,11 +1377,9 @@ function CsrReady({ result, navigate }: { result: CsrResult; navigate: (r: Route
         <Card className="flex items-start gap-3 border-ok/30 bg-ok-soft p-4">
           <KeyRound className="mt-0.5 size-4 shrink-0 text-ok" />
           <div className="min-w-0 text-[13px] text-ok">
-            <p className="font-medium">Cle privee {result.keyDesc} generee.</p>
+            <p className="font-medium">{t('new.readyKey', { desc: result.keyDesc })}</p>
             <p className="mt-0.5 break-all opacity-90 selectable">{result.keyPath}</p>
-            <p className="mt-1.5 opacity-90">
-              Elle ne doit jamais quitter ce poste : la PKI n’a besoin que de la CSR.
-            </p>
+            <p className="mt-1.5 opacity-90">{t('new.readyKeyWarn')}</p>
           </div>
         </Card>
 
@@ -1172,11 +1391,11 @@ function CsrReady({ result, navigate }: { result: CsrResult; navigate: (r: Route
                 onClick={() => void copy()}
                 icon={copied ? <Check className="size-3.5" /> : <Copy className="size-3.5" />}
               >
-                {copied ? 'Copiee' : 'Copier la CSR'}
+                {copied ? t('common.copied') : t('new.readyCopy')}
               </Button>
             }
           >
-            Demande de signature
+            {t('new.readyTitle')}
           </SectionTitle>
           <Card className="overflow-hidden">
             <pre className="max-h-72 overflow-auto bg-sunken p-4 font-mono text-[11.5px] leading-[1.55] text-muted selectable">
@@ -1190,7 +1409,7 @@ function CsrReady({ result, navigate }: { result: CsrResult; navigate: (r: Route
             aside={
               <div className="flex gap-1.5">
                 <Button size="sm" variant="ghost" onClick={() => setShowText((v) => !v)}>
-                  {showText ? 'Masquer le detail' : 'Voir le detail'}
+                  {showText ? t('new.readyHideDetail') : t('new.readyShowDetail')}
                 </Button>
                 <Button
                   size="sm"
@@ -1198,22 +1417,22 @@ function CsrReady({ result, navigate }: { result: CsrResult; navigate: (r: Route
                   icon={<FolderOpen className="size-3.5" />}
                   onClick={() => void api.system.openDir(result.dir)}
                 >
-                  Ouvrir le dossier
+                  {t('common.openFolder')}
                 </Button>
               </div>
             }
           >
-            Ce qui a ete demande
+            {t('new.readyRequested')}
           </SectionTitle>
           <Card className="overflow-hidden">
             <div className="p-5">
               <Rows>
-                <Row label="Sujet">{result.subject}</Row>
-                <Row label="SAN">{result.sans.join(', ') || '(aucun)'}</Row>
-                <Row label="Cle privee">{result.keyPath}</Row>
-                <Row label="CSR">{result.csrPath}</Row>
-                <Row label="Configuration">{result.cnfPath}</Row>
-                <Row label="Retours PKI">{result.signedDir}</Row>
+                <Row label={t('label.subject')}>{result.subject}</Row>
+                <Row label={t('label.san')}>{result.sans.join(', ') || t('common.none')}</Row>
+                <Row label={t('label.privateKey')}>{result.keyPath}</Row>
+                <Row label={t('label.csr')}>{result.csrPath}</Row>
+                <Row label={t('label.config')}>{result.cnfPath}</Row>
+                <Row label={t('label.signedDir')}>{result.signedDir}</Row>
               </Rows>
             </div>
             {showText && (

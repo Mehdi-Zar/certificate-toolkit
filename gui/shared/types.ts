@@ -7,7 +7,11 @@
 // Reglages
 // ---------------------------------------------------------------------------
 
+import type { Lang } from './i18n/index.ts'
+
 export interface Settings {
+  /** Langue de l'interface et des messages produits par le processus principal. */
+  language: Lang
   /** Racine ou vit un dossier par demande. Equivalent de $CERT_HOME dans la CLI. */
   rootDir: string
   /** Binaire openssl : "openssl" si dans le PATH, sinon chemin absolu. */

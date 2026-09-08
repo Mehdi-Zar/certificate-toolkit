@@ -7,6 +7,7 @@
  */
 import { readFile, readdir, stat } from 'node:fs/promises'
 import { join } from 'node:path'
+import { translator } from '../shared/i18n/index.ts'
 import type { CertEntry, CertInfo, EntryStatus, Settings } from '../shared/types.ts'
 import { inspectCert, splitPem } from './certs.ts'
 import { parseMeta, pathsFor } from './csr.ts'
@@ -59,9 +60,12 @@ export async function describeEntry(
   settings: Settings,
   fqdn: string,
 ): Promise<CertEntry | null> {
+  // Le scan ne produit aucun message : un traducteur neutre suffit a
+  // satisfaire la signature de pathsFor, dont on ignore ici les erreurs.
+  const t = translator(settings.language)
   let p: ReturnType<typeof pathsFor>
   try {
-    p = pathsFor(settings.rootDir, fqdn)
+    p = pathsFor(settings.rootDir, fqdn, t)
   } catch {
     return null // nom de dossier qui ne peut pas etre un FQDN
   }
@@ -75,7 +79,7 @@ export async function describeEntry(
   // Un dossier sans aucune trace de notre flux n'est pas une entree.
   if (!hasKey && !hasCsr && !hasPfx) return null
 
-  const signedFiles = await listSignedFiles(settings.rootDir, fqdn)
+  const signedFiles = await listSignedFiles(settings.rootDir, fqdn, t)
 
   let keyDesc: string | null = null
   let sans: string[] = []

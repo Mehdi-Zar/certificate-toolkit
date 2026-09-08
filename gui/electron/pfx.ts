@@ -12,6 +12,7 @@
 import { mkdtemp, readFile, readdir, rm, writeFile, chmod, stat } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { basename, dirname, join } from 'node:path'
+import type { Translate } from '../shared/i18n/index.ts'
 import type { Check, PfxRequest, PfxResult, Settings } from '../shared/types.ts'
 import {
   buildChain,
@@ -32,8 +33,12 @@ const PASS_ENV_OUT = 'CERTTK_PFX_PASS'
 const PASS_ENV_IN = 'CERTTK_KEY_PASS'
 
 /** Inventaire des fichiers deposes par la PKI, pour affichage avant assemblage. */
-export async function listSignedFiles(rootDir: string, fqdn: string): Promise<string[]> {
-  const p = pathsFor(rootDir, fqdn)
+export async function listSignedFiles(
+  rootDir: string,
+  fqdn: string,
+  t: Translate,
+): Promise<string[]> {
+  const p = pathsFor(rootDir, fqdn, t)
   try {
     const names = await readdir(p.signed)
     const files: string[] = []
@@ -51,8 +56,9 @@ export async function makePfx(
   ssl: Openssl,
   settings: Settings,
   req: PfxRequest,
+  t: Translate,
 ): Promise<PfxResult> {
-  const p = pathsFor(settings.rootDir, req.fqdn)
+  const p = pathsFor(settings.rootDir, req.fqdn, t)
   const checks: Check[] = []
 
   // -------------------------------------------------------------------------
@@ -62,37 +68,27 @@ export async function makePfx(
   try {
     keyPem = await readFile(p.key, 'utf8')
   } catch {
-    throw new Error(
-      'Cle privee introuvable : ' + p.key + '\n' +
-        "Verifiez le FQDN, ou generez d'abord la CSR.",
-    )
+    throw new Error(t('err.keyNotFound', { path: p.key }))
   }
 
   const encrypted = isEncryptedKey(keyPem)
-  if (encrypted && !req.keyPassword) {
-    throw new Error('La cle privee est chiffree : renseignez son mot de passe.')
-  }
+  if (encrypted && !req.keyPassword) throw new Error(t('err.keyEncrypted'))
 
   let keyPub: string
   try {
     keyPub = publicKeyOfPrivateKey(keyPem, encrypted ? req.keyPassword : undefined)
   } catch {
     throw new Error(
-      encrypted
-        ? 'Cle privee illisible : le mot de passe est probablement incorrect.'
-        : 'Cle privee illisible : ' + p.key,
+      encrypted ? t('err.keyBadPassword') : t('err.keyUnreadable', { path: p.key }),
     )
   }
 
   // -------------------------------------------------------------------------
   // 1. Lecture des retours PKI
   // -------------------------------------------------------------------------
-  const sources = req.inputs.length > 0 ? req.inputs : await listSignedFiles(settings.rootDir, req.fqdn)
-  if (sources.length === 0) {
-    throw new Error(
-      'Aucun fichier signe. Deposez les fichiers renvoyes par la PKI dans ' + p.signed + ', ou selectionnez-les.',
-    )
-  }
+  const sources =
+    req.inputs.length > 0 ? req.inputs : await listSignedFiles(settings.rootDir, req.fqdn, t)
+  if (sources.length === 0) throw new Error(t('err.noSignedFiles', { dir: p.signed }))
 
   const held: Held[] = []
   const rejected: string[] = []
@@ -111,20 +107,15 @@ export async function makePfx(
   if (rejected.length > 0) {
     checks.push({
       level: 'info',
-      label: rejected.length + ' fichier(s) ignore(s)',
-      detail: rejected.join(', ') + ' : ni PEM, ni DER, ni PKCS#7.',
+      label: t('check.ignored', { n: rejected.length }),
+      detail: t('check.ignoredDetail', { names: rejected.join(', ') }),
     })
   }
-  if (held.length === 0) {
-    throw new Error('Aucun certificat lisible dans les fichiers fournis.')
-  }
+  if (held.length === 0) throw new Error(t('err.noReadableCert'))
 
   const total = held.length
   const certs = dedupe(held)
-  checks.push({
-    level: 'ok',
-    label: certs.length + ' certificat(s) distinct(s) sur ' + total + ' lu(s)',
-  })
+  checks.push({ level: 'ok', label: t('check.distinct', { n: certs.length, total }) })
 
   // -------------------------------------------------------------------------
   // 2. Appariement cle privee / certificat
@@ -143,7 +134,7 @@ export async function makePfx(
         "La PKI a peut-etre signe une autre CSR, ou la cle a ete regeneree depuis l'envoi.",
     )
   }
-  checks.push({ level: 'ok', label: 'Le certificat correspond bien a la cle privee' })
+  checks.push({ level: 'ok', label: t('check.keyMatch') })
 
   // -------------------------------------------------------------------------
   // 3. Chaine
@@ -154,8 +145,8 @@ export async function makePfx(
   if (missingIssuer) {
     checks.push({
       level: 'warn',
-      label: 'Chaine incomplete',
-      detail: 'Emetteur manquant : ' + missingIssuer + '. Ajoutez le certificat de CA correspondant.',
+      label: t('check.incompleteChain'),
+      detail: t('check.incompleteChainDetail', { issuer: missingIssuer }),
     })
   }
 
@@ -166,12 +157,12 @@ export async function makePfx(
   const sanText = leaf.info.sans.join(',').replace(/IPAddress:/g, 'IP:')
 
   if (sanText.includes('DNS:' + req.fqdn) || sanText.includes('IP:' + req.fqdn)) {
-    checks.push({ level: 'ok', label: 'Le SAN couvre bien ' + req.fqdn })
+    checks.push({ level: 'ok', label: t('check.sanCovers', { name: req.fqdn }) })
   } else {
     checks.push({
       level: 'warn',
-      label: 'Le SAN ne contient pas ' + req.fqdn,
-      detail: 'Les navigateurs refuseront ce certificat pour ce nom.',
+      label: t('check.sanMissing', { name: req.fqdn }),
+      detail: t('check.sanMissingDetail'),
     })
   }
 
@@ -183,7 +174,7 @@ export async function makePfx(
     if (missing.length > 0) {
       checks.push({
         level: 'warn',
-        label: missing.length + ' SAN demande(s) absent(s) du certificat',
+        label: t('check.sansAbsent', { n: missing.length }),
         detail: missing.join(', '),
       })
     }
@@ -194,13 +185,13 @@ export async function makePfx(
   if (leaf.info.daysRemaining < 0) {
     checks.push({
       level: 'warn',
-      label: 'Le certificat est expire',
-      detail: 'Expire le ' + leaf.info.notAfter + '.',
+      label: t('check.expired'),
+      detail: t('check.expiredDetail', { date: leaf.info.notAfter }),
     })
   } else {
     checks.push({
       level: 'ok',
-      label: 'Certificat valide, expire dans ' + leaf.info.daysRemaining + ' jour(s)',
+      label: t('check.valid', { n: leaf.info.daysRemaining }),
       detail: leaf.info.notAfter,
     })
   }
@@ -216,11 +207,11 @@ export async function makePfx(
       await writeFile(chainFile, chainPem, 'utf8')
       const verified = await ssl.run(['verify', '-partial_chain', '-CAfile', chainFile, leafFile])
       if (verified.code === 0) {
-        checks.push({ level: 'ok', label: 'Chaine de confiance verifiee' })
+        checks.push({ level: 'ok', label: t('check.chainVerified') })
       } else {
         checks.push({
           level: 'warn',
-          label: 'openssl verify echoue',
+          label: t('check.verifyFailed'),
           detail: (verified.stderr || verified.out).split('\n').slice(0, 3).join(' / '),
         })
       }
@@ -228,7 +219,7 @@ export async function makePfx(
 
     const csrPub = await publicKeyOfCsr(ssl, p.csr)
     if (csrPub && csrPub === keyPub) {
-      checks.push({ level: 'ok', label: 'Meme cle publique que la CSR envoyee' })
+      checks.push({ level: 'ok', label: t('check.samePublicKey') })
     }
 
     // -----------------------------------------------------------------------
@@ -251,9 +242,7 @@ export async function makePfx(
       args.push('-certpbe', 'AES-256-CBC', '-keypbe', 'AES-256-CBC', '-macalg', 'sha256')
     }
 
-    if (!req.noPass && !req.password) {
-      throw new Error('Mot de passe vide. Cochez "PFX sans mot de passe" si c\'est voulu.')
-    }
+    if (!req.noPass && !req.password) throw new Error(t('err.emptyPassword'))
 
     const env: Record<string, string> = {}
     if (!req.noPass) env[PASS_ENV_OUT] = req.password
@@ -286,10 +275,10 @@ export async function makePfx(
     if (certCount > 0) {
       checks.push({
         level: 'ok',
-        label: 'PFX relu : ' + certCount + ' certificat(s) + 1 cle privee',
+        label: t('check.pfxRead', { n: certCount }),
       })
     } else {
-      checks.push({ level: 'warn', label: 'Le PFX produit n\'a pas pu etre relu' })
+      checks.push({ level: 'warn', label: t('check.pfxUnreadable') })
     }
 
     return {

@@ -19,7 +19,9 @@ import type {
   Reply,
   Settings,
 } from '../shared/types.ts'
+import { translator, type Translate } from '../shared/i18n/index.ts'
 import { generateCsr, pathsFor, preview } from './csr.ts'
+import { buildMenu } from './menu.ts'
 import { probeCapabilities } from './capabilities.ts'
 import { describeEntry, scanRoot } from './inventory.ts'
 import { Openssl } from './openssl.ts'
@@ -39,7 +41,13 @@ function handle<T>(channel: string, fn: (...args: never[]) => Promise<T>): void 
   })
 }
 
-const ssl = async (): Promise<Openssl> => new Openssl((await loadSettings()).opensslPath)
+/** Le traducteur de la langue courante : les messages du backend en dependent. */
+const lang = async (): Promise<Translate> => translator((await loadSettings()).language)
+
+const ssl = async (): Promise<Openssl> => {
+  const settings = await loadSettings()
+  return new Openssl(settings.opensslPath, translator(settings.language))
+}
 
 const focused = (): BrowserWindow | null =>
   BrowserWindow.getFocusedWindow() ?? BrowserWindow.getAllWindows()[0] ?? null
@@ -49,11 +57,16 @@ export function registerIpc(): void {
   // Reglages et diagnostic
   // -------------------------------------------------------------------------
   handle<Settings>('settings:get', () => loadSettings())
-  handle<Settings>('settings:save', (next: Settings) => saveSettings(next))
+  handle<Settings>('settings:save', async (next: Settings) => {
+    const saved = await saveSettings(next)
+    // Le menu natif ne se retraduit pas tout seul.
+    buildMenu(translator(saved.language))
+    return saved
+  })
 
   handle<OpensslProbe>('openssl:probe', async () => {
     const settings = await loadSettings()
-    const bin = new Openssl(settings.opensslPath)
+    const bin = new Openssl(settings.opensslPath, translator(settings.language))
     const unavailable = {
       curves: [] as string[],
       ed25519: false, ed448: false, rsaPss: false, mldsa: false, sha3: false,
@@ -89,14 +102,14 @@ export function registerIpc(): void {
   // Etape 1 : CSR
   // -------------------------------------------------------------------------
   handle<CsrResult>('csr:generate', async (req: CsrRequest) =>
-    generateCsr(await ssl(), (await loadSettings()).rootDir, req),
+    generateCsr(await ssl(), (await loadSettings()).rootDir, req, await lang()),
   )
 
   /** Apercu de la configuration et des controles, sans rien ecrire sur le disque. */
-  handle<CsrPreview>('csr:preview', async (req: CsrRequest) => preview(req))
+  handle<CsrPreview>('csr:preview', async (req: CsrRequest) => preview(req, await lang()))
 
   handle<string>('csr:read', async (fqdn: string) => {
-    const p = pathsFor((await loadSettings()).rootDir, fqdn)
+    const p = pathsFor((await loadSettings()).rootDir, fqdn, await lang())
     return readFile(p.csr, 'utf8')
   })
 
@@ -104,27 +117,28 @@ export function registerIpc(): void {
   // Etape 2 : retours PKI
   // -------------------------------------------------------------------------
   handle<string[]>('signed:list', async (fqdn: string) =>
-    listSignedFiles((await loadSettings()).rootDir, fqdn),
+    listSignedFiles((await loadSettings()).rootDir, fqdn, await lang()),
   )
 
   /** Copie les fichiers de la PKI dans <fqdn>/Signed/ (glisser-deposer ou selection). */
   handle<string[]>('signed:import', async (fqdn: string, files: string[]) => {
     const settings = await loadSettings()
-    const p = pathsFor(settings.rootDir, fqdn)
+    const t = translator(settings.language)
+    const p = pathsFor(settings.rootDir, fqdn, t)
     await mkdir(p.signed, { recursive: true })
     for (const file of files) {
       const target = join(p.signed, basename(file))
       if (target === file) continue // deja au bon endroit
       await copyFile(file, target)
     }
-    return listSignedFiles(settings.rootDir, fqdn)
+    return listSignedFiles(settings.rootDir, fqdn, t)
   })
 
   // -------------------------------------------------------------------------
   // Etape 3 : PFX
   // -------------------------------------------------------------------------
   handle<PfxResult>('pfx:make', async (req: PfxRequest) =>
-    makePfx(await ssl(), await loadSettings(), req),
+    makePfx(await ssl(), await loadSettings(), req, await lang()),
   )
 
   // -------------------------------------------------------------------------
@@ -133,8 +147,9 @@ export function registerIpc(): void {
   handle<string | null>('dialog:pickDir', async () => {
     const win = focused()
     if (!win) return null
+    const t = await lang()
     const r = await dialog.showOpenDialog(win, {
-      title: 'Racine de travail',
+      title: t('dialog.pickRoot'),
       properties: ['openDirectory', 'createDirectory'],
     })
     return r.canceled ? null : (r.filePaths[0] ?? null)
@@ -143,12 +158,13 @@ export function registerIpc(): void {
   handle<string[]>('dialog:pickFiles', async (title: string) => {
     const win = focused()
     if (!win) return []
+    const t = await lang()
     const r = await dialog.showOpenDialog(win, {
-      title: title || 'Fichiers renvoyes par la PKI',
+      title: title || t('dialog.pickSigned'),
       properties: ['openFile', 'multiSelections'],
       filters: [
-        { name: 'Certificats', extensions: ['pem', 'crt', 'cer', 'p7b', 'p7c', 'der', 'txt'] },
-        { name: 'Tous les fichiers', extensions: ['*'] },
+        { name: t('dialog.certificates'), extensions: ['pem', 'crt', 'cer', 'p7b', 'p7c', 'der', 'txt'] },
+        { name: t('dialog.allFiles'), extensions: ['*'] },
       ],
     })
     return r.canceled ? [] : r.filePaths

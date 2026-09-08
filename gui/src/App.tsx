@@ -10,7 +10,7 @@ import {
 import { useState } from 'react'
 import type { ReactNode } from 'react'
 import { cx } from './components/ui.tsx'
-import { useApp, useTheme, type Theme } from './lib/store.tsx'
+import { useApp, useT, useTheme, type Theme } from './lib/store.tsx'
 import { CertificatesPage } from './pages/CertificatesPage.tsx'
 import { DetailPage } from './pages/DetailPage.tsx'
 import { NewRequestPage } from './pages/NewRequestPage.tsx'
@@ -50,6 +50,7 @@ const routeKey = (r: Route): string => (r.name === 'detail' ? 'detail:' + r.fqdn
 
 function Sidebar({ route, navigate }: { route: Route; navigate: (r: Route) => void }) {
   const { entries } = useApp()
+  const t = useT()
   const actionable = entries.filter(
     (e) => e.status === 'ready-to-assemble' || e.status === 'expiring' || e.status === 'expired',
   ).length
@@ -62,7 +63,7 @@ function Sidebar({ route, navigate }: { route: Route; navigate: (r: Route) => vo
         </div>
         <div className="min-w-0">
           <p className="truncate text-[13px] font-semibold leading-tight">Certificate Toolkit</p>
-          <p className="truncate text-[11px] text-subtle leading-tight">Certificats X.509</p>
+          <p className="truncate text-[11px] text-subtle leading-tight">{t('app.subtitle')}</p>
         </div>
       </div>
 
@@ -73,21 +74,21 @@ function Sidebar({ route, navigate }: { route: Route; navigate: (r: Route) => vo
           onClick={() => navigate({ name: 'list' })}
           badge={actionable > 0 ? actionable : undefined}
         >
-          Certificats
+          {t('nav.certificates')}
         </NavItem>
         <NavItem
           icon={<FilePlus2 className="size-4" />}
           active={route.name === 'new'}
           onClick={() => navigate({ name: 'new' })}
         >
-          Nouvelle demande
+          {t('nav.newRequest')}
         </NavItem>
         <NavItem
           icon={<SettingsIcon className="size-4" />}
           active={route.name === 'settings'}
           onClick={() => navigate({ name: 'settings' })}
         >
-          Reglages
+          {t('nav.settings')}
         </NavItem>
       </nav>
 
@@ -133,14 +134,15 @@ function NavItem({
 
 function ThemeToggle() {
   const [theme, setTheme] = useTheme()
+  const t = useT()
   const options: Array<{ value: Theme; icon: ReactNode; label: string }> = [
-    { value: 'system', icon: <Monitor className="size-3.5" />, label: 'Systeme' },
-    { value: 'light', icon: <Sun className="size-3.5" />, label: 'Clair' },
-    { value: 'dark', icon: <Moon className="size-3.5" />, label: 'Sombre' },
+    { value: 'system', icon: <Monitor className="size-3.5" />, label: t('theme.system') },
+    { value: 'light', icon: <Sun className="size-3.5" />, label: t('theme.light') },
+    { value: 'dark', icon: <Moon className="size-3.5" />, label: t('theme.dark') },
   ]
 
   return (
-    <div className="mb-2 flex gap-0.5 rounded-lg bg-inset p-0.5" role="group" aria-label="Theme">
+    <div className="mb-2 flex gap-0.5 rounded-lg bg-inset p-0.5" role="group">
       {options.map((o) => (
         <button
           key={o.value}
@@ -164,6 +166,7 @@ function ThemeToggle() {
 
 function OpensslStatus() {
   const { probe } = useApp()
+  const t = useT()
   if (!probe) return null
 
   return (
@@ -174,7 +177,7 @@ function OpensslStatus() {
           aria-hidden
         />
         <span className="text-[11px] font-medium text-muted">
-          {probe.available ? 'OpenSSL' : 'OpenSSL introuvable'}
+          {probe.available ? t('openssl.label') : t('openssl.notFound')}
         </span>
       </div>
       {probe.available && (
@@ -189,12 +192,13 @@ function OpensslStatus() {
 
 function OpensslWarning({ onFix }: { onFix: () => void }) {
   const { probe } = useApp()
+  const t = useT()
   return (
     <div className="flex items-start gap-3 border-b border-danger/25 bg-danger-soft px-8 py-3.5">
       <AlertTriangle className="mt-0.5 size-4 shrink-0 text-danger" />
       <div className="min-w-0 flex-1">
         <p className="text-[13px] font-medium text-danger">
-          OpenSSL est introuvable — aucune operation n’est possible.
+          {t('openssl.blocked')}
         </p>
         <p className="mt-0.5 text-[12px] text-danger/85 selectable">{probe?.version}</p>
       </div>
@@ -202,7 +206,7 @@ function OpensslWarning({ onFix }: { onFix: () => void }) {
         onClick={onFix}
         className="shrink-0 rounded-md px-2.5 py-1 text-[12px] font-medium text-danger underline underline-offset-2 hover:bg-danger/10"
       >
-        Indiquer le chemin
+        {t('openssl.setPath')}
       </button>
     </div>
   )

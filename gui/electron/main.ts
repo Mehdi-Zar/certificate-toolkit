@@ -11,8 +11,10 @@
 import { app, BrowserWindow, shell } from 'electron'
 import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'node:path'
+import { translator } from '../shared/i18n/index.ts'
 import { registerIpc } from './ipc.ts'
 import { installMenu } from './menu.ts'
+import { loadSettings } from './store.ts'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
@@ -24,7 +26,7 @@ const RENDERER_DIST = join(APP_ROOT, 'dist')
 
 let win: BrowserWindow | null = null
 
-function createWindow(): void {
+async function createWindow(): Promise<void> {
   win = new BrowserWindow({
     width: 1180,
     height: 800,
@@ -45,7 +47,7 @@ function createWindow(): void {
     },
   })
 
-  installMenu(win)
+  installMenu(win, translator((await loadSettings()).language))
 
   win.once('ready-to-show', () => win?.show())
 
@@ -79,10 +81,10 @@ if (!app.requestSingleInstanceLock()) {
 
   app.whenReady().then(() => {
     registerIpc()
-    createWindow()
+    void createWindow()
 
     app.on('activate', () => {
-      if (BrowserWindow.getAllWindows().length === 0) createWindow()
+      if (BrowserWindow.getAllWindows().length === 0) void createWindow()
     })
   })
 

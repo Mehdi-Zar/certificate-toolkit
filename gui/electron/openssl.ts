@@ -8,6 +8,7 @@
  *    fourni par l'utilisateur ne peut etre interprete comme une commande.
  */
 import { spawn } from 'node:child_process'
+import { translator, type Translate } from '../shared/i18n/index.ts'
 
 export interface RunOptions {
   /** Ecrit sur stdin du processus. */
@@ -43,9 +44,11 @@ const TIMEOUT_MS = 60_000
 
 export class Openssl {
   private readonly bin: string
+  private readonly t: Translate
 
-  constructor(bin: string = 'openssl') {
+  constructor(bin: string = 'openssl', t: Translate = translator('fr')) {
     this.bin = bin
+    this.t = t
   }
 
   /** Execute openssl. Ne rejette jamais sur un code de sortie non nul. */
@@ -66,7 +69,7 @@ export class Openssl {
         if (settled) return
         settled = true
         child.kill()
-        reject(new OpensslError(`openssl n'a pas repondu en ${TIMEOUT_MS / 1000}s`, args, stderr))
+        reject(new OpensslError(this.t('err.opensslTimeout', { sec: TIMEOUT_MS / 1000 }), args, stderr))
       }, TIMEOUT_MS)
 
       child.stdout.on('data', (c: Buffer) => stdout.push(c))
@@ -80,7 +83,7 @@ export class Openssl {
         clearTimeout(timer)
         const hint =
           (err as NodeJS.ErrnoException).code === 'ENOENT'
-            ? `openssl introuvable (${this.bin}). Renseignez son chemin dans les reglages.`
+            ? this.t('err.opensslMissing', { bin: this.bin })
             : err.message
         reject(new OpensslError(hint, args, stderr))
       })
@@ -115,7 +118,10 @@ export class Openssl {
     if (r.code !== 0) {
       const why = r.stderr.split('\n').filter(Boolean).slice(-3).join(' / ')
       throw new OpensslError(
-        `openssl ${args[0]} a echoue${why ? ` : ${why}` : ` (code ${r.code})`}`,
+        this.t('err.opensslFailed', {
+          cmd: args[0] ?? '',
+          why: why ? ' : ' + why : ' (code ' + r.code + ')',
+        }),
         args,
         r.stderr,
       )
@@ -134,7 +140,13 @@ export class Openssl {
 
   async version(): Promise<string> {
     const r = await this.run(['version'])
-    if (r.code !== 0) throw new OpensslError('openssl version a echoue', ['version'], r.stderr)
+    if (r.code !== 0) {
+      throw new OpensslError(
+        this.t('err.opensslFailed', { cmd: 'version', why: '' }),
+        ['version'],
+        r.stderr,
+      )
+    }
     return r.out
   }
 }

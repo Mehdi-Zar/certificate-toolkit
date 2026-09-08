@@ -17,13 +17,15 @@ import { Badge, Button, Card, EmptyState, ErrorBanner, Input, Spinner, cx } from
 import type { Route } from '../App.tsx'
 import { api } from '../lib/api.ts'
 import { getTemplate } from '../../shared/templates.ts'
-import { STATUS, expiryLabel, isoDate, shortDate } from '../lib/format.ts'
-import { useApp } from '../lib/store.tsx'
+import type { Translate } from '../../shared/i18n/index.ts'
+import { STATUS_TONE, expiryLabel, isoDate, shortDate, statusHintKey, statusLabelKey } from '../lib/format.ts'
+import { useApp, useT } from '../lib/store.tsx'
 
 type Filter = 'all' | 'todo' | EntryStatus
 
 export function CertificatesPage({ navigate }: { navigate: (r: Route) => void }) {
   const { entries, settings, loading, error, refresh } = useApp()
+  const t = useT()
   const [query, setQuery] = useState('')
   const [filter, setFilter] = useState<Filter>('all')
 
@@ -52,7 +54,7 @@ export function CertificatesPage({ navigate }: { navigate: (r: Route) => void })
   return (
     <>
       <PageHeader
-        title="Certificats"
+        title={t('list.title')}
         description={settings?.rootDir}
         actions={
           <>
@@ -62,7 +64,7 @@ export function CertificatesPage({ navigate }: { navigate: (r: Route) => void })
               onClick={() => settings && void api.system.openDir(settings.rootDir)}
               disabled={!settings}
             >
-              Ouvrir le dossier
+              {t('common.openFolder')}
             </Button>
             <Button
               size="sm"
@@ -70,7 +72,7 @@ export function CertificatesPage({ navigate }: { navigate: (r: Route) => void })
               onClick={() => void refresh()}
               disabled={loading}
             >
-              Actualiser
+              {t('common.refresh')}
             </Button>
             <Button
               size="sm"
@@ -78,7 +80,7 @@ export function CertificatesPage({ navigate }: { navigate: (r: Route) => void })
               icon={<FilePlus2 className="size-3.5" />}
               onClick={() => navigate({ name: 'new' })}
             >
-              Nouvelle demande
+              {t('nav.newRequest')}
             </Button>
           </>
         }
@@ -94,17 +96,17 @@ export function CertificatesPage({ navigate }: { navigate: (r: Route) => void })
               <Input
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder="Filtrer par nom ou SAN"
+                placeholder={t('list.filter')}
                 className="pl-9"
-                aria-label="Filtrer"
+                aria-label={t('list.filterLabel')}
               />
             </div>
             <div className="flex gap-0.5 rounded-lg bg-inset p-0.5">
               <Tab active={filter === 'all'} onClick={() => setFilter('all')} count={counts.all}>
-                Tous
+                {t('list.tabAll')}
               </Tab>
               <Tab active={filter === 'todo'} onClick={() => setFilter('todo')} count={counts.todo}>
-                A traiter
+                {t('list.tabTodo')}
               </Tab>
             </div>
           </div>
@@ -118,15 +120,15 @@ export function CertificatesPage({ navigate }: { navigate: (r: Route) => void })
           <Card>
             <EmptyState
               icon={<Inbox className="size-5" />}
-              title="Aucun certificat"
-              description="La racine de travail ne contient encore aucun dossier de demande. Commencez par generer une CSR."
+              title={t('list.emptyTitle')}
+              description={t('list.emptyDesc')}
               action={
                 <Button
                   variant="primary"
                   icon={<FilePlus2 className="size-4" />}
                   onClick={() => navigate({ name: 'new' })}
                 >
-                  Nouvelle demande
+                  {t('nav.newRequest')}
                 </Button>
               }
             />
@@ -135,8 +137,8 @@ export function CertificatesPage({ navigate }: { navigate: (r: Route) => void })
           <Card>
             <EmptyState
               icon={<Search className="size-5" />}
-              title="Aucun resultat"
-              description="Aucun dossier ne correspond a ce filtre."
+              title={t('list.noResultTitle')}
+              description={t('list.noResultDesc')}
             />
           </Card>
         ) : (
@@ -145,6 +147,8 @@ export function CertificatesPage({ navigate }: { navigate: (r: Route) => void })
               <EntryRow
                 key={entry.fqdn}
                 entry={entry}
+                t={t}
+                lang={settings?.language ?? 'fr'}
                 onClick={() => navigate({ name: 'detail', fqdn: entry.fqdn })}
               />
             ))}
@@ -180,14 +184,23 @@ function Tab({
   )
 }
 
-function EntryRow({ entry, onClick }: { entry: CertEntry; onClick: () => void }) {
-  const style = STATUS[entry.status]
+function EntryRow({
+  entry,
+  onClick,
+  t,
+  lang,
+}: {
+  entry: CertEntry
+  onClick: () => void
+  t: Translate
+  lang: 'fr' | 'en'
+}) {
   const cert = entry.cert
 
   return (
     <button
       onClick={onClick}
-      title={style.hint}
+      title={t(statusHintKey(entry.status))}
       className={cx(
         'group flex items-center gap-4 rounded-[var(--radius-panel)] border border-line bg-surface',
         'px-4 py-3.5 text-left transition-colors hover:border-line-strong hover:bg-inset/40',
@@ -200,21 +213,21 @@ function EntryRow({ entry, onClick }: { entry: CertEntry; onClick: () => void })
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
           <span className="truncate font-medium">{entry.fqdn}</span>
-          <Badge tone={style.tone}>{style.label}</Badge>
+          <Badge tone={STATUS_TONE[entry.status]}>{t(statusLabelKey(entry.status))}</Badge>
         </div>
         <p className="mt-0.5 truncate text-[12px] text-subtle">
-          {entry.templateId && getTemplate(entry.templateId).label + ' · '}
-          {entry.keyDesc ?? cert?.keyDesc ?? 'cle inconnue'}
-          {entry.sans.length > 1 && ' · ' + (entry.sans.length - 1) + ' SAN supplementaire(s)'}
+          {entry.templateId && t(getTemplate(entry.templateId).labelKey) + ' · '}
+          {entry.keyDesc ?? cert?.keyDesc ?? t('list.keyUnknown')}
+          {entry.sans.length > 1 && ' · ' + t('list.extraSans', { n: entry.sans.length - 1 })}
           {entry.status === 'ready-to-assemble' &&
-            ' · ' + entry.signedFiles.length + ' fichier(s) recu(s)'}
+            ' · ' + t('list.filesReceived', { n: entry.signedFiles.length })}
         </p>
       </div>
 
       <div className="hidden shrink-0 text-right sm:block">
         {cert ? (
           <>
-            <p className="text-[12px] text-muted">{shortDate(cert.notAfter)}</p>
+            <p className="text-[12px] text-muted">{shortDate(cert.notAfter, lang)}</p>
             <p
               className={cx(
                 'text-[11px]',
@@ -225,11 +238,11 @@ function EntryRow({ entry, onClick }: { entry: CertEntry; onClick: () => void })
                     : 'text-subtle',
               )}
             >
-              {expiryLabel(cert.daysRemaining)}
+              {expiryLabel(cert.daysRemaining, t)}
             </p>
           </>
         ) : (
-          <p className="text-[12px] text-subtle">cree le {isoDate(entry.createdAt)}</p>
+          <p className="text-[12px] text-subtle">{t('list.createdOn', { date: isoDate(entry.createdAt, lang) })}</p>
         )}
       </div>
 
