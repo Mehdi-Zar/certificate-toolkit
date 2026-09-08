@@ -1,0 +1,17 @@
+Certificate Toolkit
+
+Outil interne. Tous droits reserves.
+
+Ce logiciel et sa documentation sont diffuses au sein de l'organisation qui en
+est proprietaire. Toute redistribution en dehors de ce cadre demande une
+autorisation ecrite.
+
+Composants tiers
+----------------
+
+L'application redistribue une copie non modifiee d'OpenSSL, sous licence
+Apache 2.0. Sa licence et un fichier NOTICE l'accompagnent dans le paquet, sous
+resources/openssl/.
+
+Les dependances de developpement conservent leurs licences respectives, listees
+dans gui/package-lock.json.

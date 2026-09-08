@@ -715,6 +715,12 @@ export const en: Record<MessageKey, string> = {
   'settings.opensslBundledHelp':
     'The application ships its own copy of OpenSSL so it depends on nothing else. Leave "openssl" to use it; give a full path only if your organisation mandates a specific binary.',
 
+  'new.readyWhere': 'Your request is ready',
+  'new.readyWhereDesc':
+    'The file is saved in your workspace. Send it to your certificate authority, then come back to drop its answer here.',
+  'new.revealCsr': 'Show the file',
+  'new.revealKey': 'Show the key',
+
   // -------------------------------------------------------------------------
   // Workspace
   // -------------------------------------------------------------------------

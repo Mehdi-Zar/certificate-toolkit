@@ -103,23 +103,27 @@ function Sidebar({
         >
           {t('nav.newRequest')}
         </NavItem>
-        <NavItem
-          icon={<SettingsIcon className="size-4" />}
-          active={route.name === 'settings'}
-          onClick={() => navigate({ name: 'settings' })}
-        >
-          {t('nav.settings')}
-        </NavItem>
       </nav>
 
+      {/* Le parcours occupe le haut ; ce qui suit ne fait pas partie des
+          etapes et vit donc plus bas, detache. */}
       <div className="mt-auto p-3">
-        <button
-          onClick={onWizard}
-          className="mb-2 flex h-9 w-full items-center gap-2.5 rounded-lg px-2.5 text-[13px] font-medium text-muted transition-colors hover:bg-inset hover:text-ink"
-        >
-          <LifeBuoy className="size-4" />
-          <span className="flex-1 text-left">{t('wizard.reopen')}</span>
-        </button>
+        <div className="mb-2 border-t border-line pt-2">
+          <NavItem
+            icon={<SettingsIcon className="size-4" />}
+            active={route.name === 'settings'}
+            onClick={() => navigate({ name: 'settings' })}
+          >
+            {t('nav.settings')}
+          </NavItem>
+          <button
+            onClick={onWizard}
+            className="flex h-9 w-full items-center gap-2.5 rounded-lg px-2.5 text-[13px] font-medium text-muted transition-colors hover:bg-inset hover:text-ink"
+          >
+            <LifeBuoy className="size-4" />
+            <span className="flex-1 text-left">{t('wizard.reopen')}</span>
+          </button>
+        </div>
         <ThemeToggle />
         <LanguageToggle />
         <OpensslStatus />

@@ -724,6 +724,12 @@ export const fr = {
   'settings.opensslBundledHelp':
     'L’application embarque sa propre copie d’OpenSSL, pour ne dépendre de rien sur le poste. Laissez « openssl » pour l’utiliser ; indiquez un chemin complet seulement si votre organisation impose un binaire précis.',
 
+  'new.readyWhere': 'Votre demande est prête',
+  'new.readyWhereDesc':
+    'Le fichier est enregistré dans votre espace de travail. Envoyez-le à votre autorité de certification, puis revenez déposer sa réponse.',
+  'new.revealCsr': 'Montrer le fichier',
+  'new.revealKey': 'Montrer la clé',
+
   // -------------------------------------------------------------------------
   // Espace de travail
   // -------------------------------------------------------------------------

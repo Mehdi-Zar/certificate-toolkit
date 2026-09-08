@@ -9,7 +9,7 @@ import {
   Search,
   ShieldCheck,
 } from 'lucide-react'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import type { CertEntry, EntryStatus } from '../../shared/types.ts'
 import { PageBody, PageHeader } from '../components/PageHeader.tsx'
 import { Badge, Button, Card, EmptyState, ErrorBanner, Input, Spinner, cx } from '../components/ui.tsx'
@@ -27,6 +27,14 @@ export function CertificatesPage({ navigate }: { navigate: (r: Route) => void })
   const t = useT()
   const [query, setQuery] = useState('')
   const [filter, setFilter] = useState<Filter>('all')
+
+  // La liste se recharge chaque fois qu'on l'ouvre. Le dossier de travail est
+  // un dossier ordinaire : il peut avoir change sans que l'application le
+  // sache, et il ne faut pas avoir a cliquer sur Actualiser pour voir une
+  // demande qu'on vient de creer.
+  useEffect(() => {
+    void refresh()
+  }, [refresh])
 
   const counts = useMemo(() => {
     const todo = entries.filter(

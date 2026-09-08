@@ -14,6 +14,7 @@ import {
   Copy,
   CreditCard,
   FileSignature,
+  FileText,
   FolderOpen,
   Globe,
   Info,
@@ -74,6 +75,7 @@ import {
   cx,
 } from '../components/ui.tsx'
 import { api, message, unwrap } from '../lib/api.ts'
+import { useSystem } from '../lib/system.ts'
 import { useApp, useT } from '../lib/store.tsx'
 
 // ---------------------------------------------------------------------------
@@ -1346,6 +1348,7 @@ function Note({ tone, children }: { tone: 'error' | 'warn' | 'info'; children: R
 function CsrReady({ result, navigate }: { result: CsrResult; navigate: (r: Route) => void }) {
   const t = useT()
   const toast = useToast()
+  const system = useSystem()
   const [copied, setCopied] = useState(false)
   const [showText, setShowText] = useState(false)
 
@@ -1374,13 +1377,62 @@ function CsrReady({ result, navigate }: { result: CsrResult; navigate: (r: Route
       />
 
       <PageBody>
+        {/* Ou est le fichier, et comment l'atteindre. C'est la question que
+            se pose tout le monde a cet instant. */}
+        <Card className="border-accent/35 bg-accent-soft p-5">
+          <div className="flex items-start gap-3.5">
+            <span className="grid size-10 shrink-0 place-items-center rounded-lg bg-accent text-accent-fg">
+              <FileText className="size-5" />
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="font-medium text-accent">{t('new.readyWhere')}</p>
+              <p className="mt-0.5 text-[13px] leading-relaxed text-muted">
+                {t('new.readyWhereDesc')}
+              </p>
+              <p className="mt-2 break-all font-mono text-[12px] text-ink selectable">
+                {result.csrPath}
+              </p>
+            </div>
+          </div>
+
+          <div className="mt-4 flex flex-wrap gap-2">
+            <Button
+              variant="primary"
+              onClick={() => void copy()}
+              icon={copied ? <Check className="size-4" /> : <Copy className="size-4" />}
+            >
+              {copied ? t('common.copied') : t('new.readyCopy')}
+            </Button>
+            <Button
+              icon={<FileText className="size-4" />}
+              onClick={() => system.reveal(result.csrPath)}
+            >
+              {t('new.revealCsr')}
+            </Button>
+            <Button
+              icon={<FolderOpen className="size-4" />}
+              onClick={() => system.openDir(result.dir)}
+            >
+              {t('common.openFolder')}
+            </Button>
+          </div>
+        </Card>
+
         <Card className="flex items-start gap-3 border-ok/30 bg-ok-soft p-4">
           <KeyRound className="mt-0.5 size-4 shrink-0 text-ok" />
-          <div className="min-w-0 text-[13px] text-ok">
+          <div className="min-w-0 flex-1 text-[13px] text-ok">
             <p className="font-medium">{t('new.readyKey', { desc: result.keyDesc })}</p>
             <p className="mt-0.5 break-all opacity-90 selectable">{result.keyPath}</p>
             <p className="mt-1.5 opacity-90">{t('new.readyKeyWarn')}</p>
           </div>
+          <Button
+            size="sm"
+            variant="ghost"
+            className="shrink-0"
+            onClick={() => system.reveal(result.keyPath)}
+          >
+            {t('new.revealKey')}
+          </Button>
         </Card>
 
         <section>
@@ -1415,7 +1467,7 @@ function CsrReady({ result, navigate }: { result: CsrResult; navigate: (r: Route
                   size="sm"
                   variant="ghost"
                   icon={<FolderOpen className="size-3.5" />}
-                  onClick={() => void api.system.openDir(result.dir)}
+                  onClick={() => system.openDir(result.dir)}
                 >
                   {t('common.openFolder')}
                 </Button>
