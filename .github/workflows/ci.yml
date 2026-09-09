@@ -1,0 +1,63 @@
+# Ce qui doit passer avant qu'un commit soit considere comme bon.
+#
+# Windows plutot que Linux : l'application est une application Electron testee
+# en la lancant pour de vrai. Sous Linux il faudrait un serveur d'affichage
+# virtuel, et surtout la seule plateforme reellement livree aujourd'hui est
+# Windows. Tester ailleurs donnerait une assurance que le produit n'a pas.
+name: Controles
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+# Une poussee annule la verification de la precedente sur la meme branche :
+# seul le dernier etat compte.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verifier:
+    runs-on: windows-latest
+    timeout-minutes: 25
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: gui/package-lock.json
+
+      - name: Installer les dependances
+        working-directory: gui
+        run: npm ci
+
+      # Les runners Windows embarquent Git for Windows, donc un OpenSSL 3
+      # recent. C'est la meme source que sur un poste de developpement.
+      - name: Verifier la presence d'OpenSSL
+        shell: bash
+        run: openssl version
+
+      - name: Empaqueter OpenSSL
+        working-directory: gui
+        run: npm run bundle:openssl
+
+      # npm test enchaine le lint, le typage, le controle de documentation,
+      # la construction, puis les tests de bout en bout.
+      - name: Controles et tests
+        working-directory: gui
+        run: npm test
+
+      # Les traces ne sont produites qu'en cas d'echec, et c'est la seule
+      # facon de comprendre un echec qu'on ne reproduit pas en local.
+      - name: Conserver les traces d'echec
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: traces-playwright
+          path: gui/test-results/
+          retention-days: 7
