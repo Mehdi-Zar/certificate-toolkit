@@ -13,6 +13,7 @@
 import { HelpCircle } from 'lucide-react'
 import { useCallback, useEffect, useId, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
+import { useT } from '../lib/store.tsx'
 import { cx } from './ui.tsx'
 
 interface Position {
@@ -27,6 +28,7 @@ const GAP = 8
 const MARGIN = 12
 
 export function Hint({ text, label }: { text: string; label?: string }) {
+  const t = useT()
   const [open, setOpen] = useState(false)
   const [pos, setPos] = useState<Position | null>(null)
   const anchor = useRef<HTMLButtonElement>(null)
@@ -76,7 +78,9 @@ export function Hint({ text, label }: { text: string; label?: string }) {
       <button
         ref={anchor}
         type="button"
-        aria-label={label ?? 'Aide'}
+        // Le libelle du champ ne suffit pas : sans le mot "aide", un lecteur
+        // d'ecran annonce deux boutons identiques, celui-ci et le champ.
+        aria-label={label ? t('common.help') + ' : ' + label : t('common.help')}
         aria-describedby={open ? id : undefined}
         aria-expanded={open}
         onMouseEnter={show}

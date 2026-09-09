@@ -45,10 +45,17 @@ const TIMEOUT_MS = 60_000
 export class Openssl {
   private readonly bin: string
   private readonly t: Translate
+  /** Applique a chaque appel : la copie embarquee a besoin d'OPENSSL_CONF. */
+  private readonly baseEnv: Record<string, string>
 
-  constructor(bin: string = 'openssl', t: Translate = translator('fr')) {
+  constructor(
+    bin: string = 'openssl',
+    t: Translate = translator('fr'),
+    baseEnv: Record<string, string> = {},
+  ) {
     this.bin = bin
     this.t = t
+    this.baseEnv = baseEnv
   }
 
   /** Execute openssl. Ne rejette jamais sur un code de sortie non nul. */
@@ -56,7 +63,7 @@ export class Openssl {
     return new Promise((resolve, reject) => {
       const child = spawn(this.bin, args, {
         cwd: opts.cwd,
-        env: { ...process.env, ...opts.env },
+        env: { ...process.env, ...this.baseEnv, ...opts.env },
         windowsHide: true,
         shell: false,
       })

@@ -153,8 +153,9 @@ export async function makePfx(
   // -------------------------------------------------------------------------
   // 4. Controles
   // -------------------------------------------------------------------------
-  // openssl affiche "IPAddress:", nos SAN s'ecrivent "IP:" : on aligne.
-  const sanText = leaf.info.sans.join(',').replace(/IPAddress:/g, 'IP:')
+  // Les libelles d'openssl sont deja ramenes a notre notation a la lecture du
+  // certificat (voir normalizeSan) : ici on compare des chaines comparables.
+  const sanText = leaf.info.sans.join(',')
 
   if (sanText.includes('DNS:' + req.fqdn) || sanText.includes('IP:' + req.fqdn)) {
     checks.push({ level: 'ok', label: t('check.sanCovers', { name: req.fqdn }) })

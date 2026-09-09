@@ -14,7 +14,6 @@ import {
   Inbox,
   Package,
   ShieldCheck,
-  Trash2,
   Upload,
 } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
@@ -738,15 +737,11 @@ function ChainNode({ label, info, tone }: { label: string; info: CertInfo; tone:
 }
 
 function CheckLine({ check }: { check: CheckResult }) {
-  const tone = {
-    ok: { icon: <Check className="size-3.5" />, cls: 'text-ok' },
-    warn: { icon: <Trash2 className="hidden" />, cls: 'text-warn' },
-    info: { icon: <Trash2 className="hidden" />, cls: 'text-subtle' },
-  }[check.level]
+  const cls = { ok: 'text-ok', warn: 'text-warn', info: 'text-subtle' }[check.level]
 
   return (
-    <li className="flex items-start gap-2.5 text-[13px]">
-      <span className={cx('mt-0.5 shrink-0 font-mono text-[13px] leading-none', tone.cls)}>
+    <li className="flex items-start gap-2.5 text-[13px]" data-level={check.level}>
+      <span className={cx('mt-0.5 shrink-0 font-mono text-[13px] leading-none', cls)}>
         {check.level === 'ok' ? '✓' : check.level === 'warn' ? '!' : 'i'}
       </span>
       <span className="min-w-0">

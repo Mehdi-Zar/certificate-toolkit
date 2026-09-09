@@ -407,11 +407,13 @@ function RequestForm({
 
             <Field
               label={t('new.sanLabel')}
+              htmlFor="san"
               hint={t(template.sanHintKey)}
               help={t('new.sanHelp')}
               error={started ? (errors.find((e) => e.field === 'sans')?.message ?? null) : null}
             >
               <SanEditor
+                id="san"
                 sans={req.sans}
                 onChange={(next) => patch((d) => void (d.sans = next))}
                 allowed={
@@ -557,8 +559,9 @@ function SubjectSection({
         </Field>
       </div>
 
-      <Field label={t('field.ous')} hint={t('field.ous.hint')} help={t('field.ous.help')}>
+      <Field label={t('field.ous')} htmlFor="ous" hint={t('field.ous.hint')} help={t('field.ous.help')}>
         <StringList
+          id="ous"
           values={s.ous}
           onChange={(next) => patch((d) => void (d.subject.ous = next))}
           placeholder={t('ph.ou')}
@@ -681,8 +684,9 @@ function SubjectSection({
             </Field>
           </div>
 
-          <Field label={t('field.dc')} hint={t('field.dc.hint')} help={t('field.dc.help')}>
+          <Field label={t('field.dc')} htmlFor="dcs" hint={t('field.dc.hint')} help={t('field.dc.help')}>
             <StringList
+              id="dcs"
               values={s.domainComponents}
               onChange={(next) => patch((d) => void (d.subject.domainComponents = next))}
               placeholder={t('ph.dc')}
@@ -1392,7 +1396,7 @@ function CsrReady({ result, navigate }: { result: CsrResult; navigate: (r: Route
       <PageBody>
         {/* Ou est le fichier, et comment l'atteindre. C'est la question que
             se pose tout le monde a cet instant. */}
-        <Card className="border-accent/35 bg-accent-soft p-5">
+        <Card className="border-accent/35 bg-accent-soft p-5" data-testid="csr-file-card">
           <div className="flex items-start gap-3.5">
             <span className="grid size-10 shrink-0 place-items-center rounded-lg bg-accent text-accent-fg">
               <FileText className="size-5" />

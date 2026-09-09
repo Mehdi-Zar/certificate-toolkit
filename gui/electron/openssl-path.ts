@@ -13,7 +13,7 @@
  */
 import { app } from 'electron'
 import { existsSync } from 'node:fs'
-import { join, resolve } from 'node:path'
+import { dirname, join, resolve } from 'node:path'
 import type { Settings } from '../shared/types.ts'
 
 /** Valeur par defaut du reglage : elle signifie "choisis pour moi". */
@@ -39,14 +39,28 @@ export interface Resolved {
   path: string
   /** Vrai quand c'est la copie livree avec l'application. */
   bundled: boolean
+  /**
+   * Environnement a ajouter aux appels. La copie embarquee cherche sa
+   * configuration dans le OPENSSLDIR fige a sa compilation, chemin qui
+   * n'existe plus une fois le binaire deplace : sans OPENSSL_CONF, toute
+   * commande sans -config explicite echoue, dont la verification d'une CSR.
+   */
+  env: Record<string, string>
 }
 
 export function resolveOpenssl(settings: Settings): Resolved {
   const chosen = settings.opensslPath?.trim()
-  if (chosen && chosen !== DEFAULT_OPENSSL) return { path: chosen, bundled: false }
+  if (chosen && chosen !== DEFAULT_OPENSSL) return { path: chosen, bundled: false, env: {} }
 
   const bundled = bundledOpenssl()
-  if (bundled) return { path: bundled, bundled: true }
+  if (bundled) {
+    const conf = join(dirname(bundled), 'openssl.cnf')
+    return {
+      path: bundled,
+      bundled: true,
+      env: existsSync(conf) ? { OPENSSL_CONF: conf } : {},
+    }
+  }
 
-  return { path: DEFAULT_OPENSSL, bundled: false }
+  return { path: DEFAULT_OPENSSL, bundled: false, env: {} }
 }

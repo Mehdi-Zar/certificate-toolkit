@@ -211,6 +211,7 @@ function Step({
       <span className="min-w-0 flex-1 truncate text-left">{children}</span>
       {count > 0 && (
         <span
+          data-testid="step-count"
           className={cx(
             'grid min-w-5 shrink-0 place-items-center rounded-full px-1.5 text-[11px] font-semibold',
             urgent ? 'bg-accent text-accent-fg' : 'bg-inset text-muted',

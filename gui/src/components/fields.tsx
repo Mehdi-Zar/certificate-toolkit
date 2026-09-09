@@ -15,12 +15,15 @@ import { Badge, Button, Input, Select, cx } from './ui.tsx'
 // ---------------------------------------------------------------------------
 
 export function StringList({
+  id,
   values,
   onChange,
   placeholder,
   addLabel,
   type = 'text',
 }: {
+  /** Rattache le champ au libelle du Field qui l'entoure. */
+  id?: string
   values: string[]
   onChange: (next: string[]) => void
   placeholder: string
@@ -62,6 +65,7 @@ export function StringList({
       )}
       <div className="flex gap-2">
         <Input
+          id={id}
           type={type}
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
@@ -115,6 +119,7 @@ const SAN_PLACEHOLDER: Record<SanType, string> = {
 }
 
 export function SanEditor({
+  id,
   sans,
   onChange,
   allowed,
@@ -122,6 +127,8 @@ export function SanEditor({
   /** Le CN, ajoute automatiquement en premier SAN par certains modeles. */
   implicit,
 }: {
+  /** Rattache le champ au libelle du Field qui l'entoure. */
+  id?: string
   sans: San[]
   onChange: (next: San[]) => void
   allowed: SanType[]
@@ -139,10 +146,17 @@ export function SanEditor({
   const add = () => {
     const v = value.trim()
     if (!v) return
-    // Un prefixe explicite ("IP:10.0.0.1") l'emporte sur le selecteur.
+
     const detected = guess(v)
+    // Trois cas, dans cet ordre :
+    //   1. un prefixe explicite ("IP:10.0.0.1") l'emporte sur tout ;
+    //   2. sinon une detection franche l'emporte sur le selecteur, sans quoi
+    //      taper une adresse IP l'enregistrerait comme nom DNS ;
+    //   3. sinon le selecteur tranche, DNS etant le repli de la detection.
+    const explicitPrefix = detected.value !== v
+    const confident = detected.type !== 'DNS'
     const san: San =
-      detected.value !== v
+      explicitPrefix || confident
         ? detected
         : { type: activeType, value: v, ...(activeType === 'otherName' ? { oid: oid.trim() } : {}) }
     if (sans.some((s) => s.type === san.type && s.value === san.value)) return setValue('')
@@ -178,6 +192,7 @@ export function SanEditor({
         )}
         <div className="min-w-0 flex-1">
           <Input
+            id={id}
             value={value}
             onChange={(e) => setValue(e.target.value)}
             onKeyDown={(e) => {

@@ -47,7 +47,8 @@ const lang = async (): Promise<Translate> => translator((await loadSettings()).l
 
 const ssl = async (): Promise<Openssl> => {
   const settings = await loadSettings()
-  return new Openssl(resolveOpenssl(settings).path, translator(settings.language))
+  const chosen = resolveOpenssl(settings)
+  return new Openssl(chosen.path, translator(settings.language), chosen.env)
 }
 
 const focused = (): BrowserWindow | null =>
@@ -68,7 +69,7 @@ export function registerIpc(): void {
   handle<OpensslProbe>('openssl:probe', async () => {
     const settings = await loadSettings()
     const chosen = resolveOpenssl(settings)
-    const bin = new Openssl(chosen.path, translator(settings.language))
+    const bin = new Openssl(chosen.path, translator(settings.language), chosen.env)
     const unavailable = {
       curves: [] as string[],
       ed25519: false, ed448: false, rsaPss: false, mldsa: false, sha3: false,

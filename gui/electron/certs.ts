@@ -174,17 +174,41 @@ export async function inspectCert(ssl: Openssl, certPem: string): Promise<CertIn
   }
 }
 
+/**
+ * openssl imprime les types de SAN avec ses propres libelles, qui ne sont pas
+ * ceux qu'on ecrit dans une demande : "IP Address:" la ou une CSR dit "IP:",
+ * "Registered ID:" la ou elle dit "RID:". Sans cette table, comparer les SAN
+ * demandes a ceux delivres declare manquant tout ce qui n'est pas un nom DNS.
+ */
+const SAN_LABELS: Array<[RegExp, string]> = [
+  [/^IP ?Address:/i, 'IP:'],
+  [/^Registered ?ID:/i, 'RID:'],
+  [/^othername:/i, 'otherName:'],
+  [/^email(?:Address)?:/i, 'email:'],
+  [/^URI:/i, 'URI:'],
+  [/^DNS:/i, 'DNS:'],
+]
+
+/** "IP Address:10.0.0.1" -> "IP:10.0.0.1". Type inconnu : rendu tel quel. */
+export function normalizeSan(entry: string): string {
+  for (const [pattern, prefix] of SAN_LABELS) {
+    if (pattern.test(entry)) return entry.replace(pattern, prefix)
+  }
+  return entry
+}
+
 /** Une extension, eclatee en valeurs. Absente => tableau vide, jamais d'erreur. */
 async function readExtension(ssl: Openssl, certPem: string, ext: string): Promise<string[]> {
   const r = await ssl.run(['x509', '-noout', '-ext', ext], { input: certPem })
   if (r.code !== 0) return []
-  return r.out
+  const values = r.out
     .split(/\r?\n/)
     .slice(1) // la 1re ligne repete le nom de l'extension
     .join(',')
     .split(',')
     .map((s) => s.trim())
     .filter(Boolean)
+  return ext === 'subjectAltName' ? values.map(normalizeSan) : values
 }
 
 /** "Sep  7 10:18:00 2026 GMT" -> Date. Null si illisible. */
