@@ -24,9 +24,9 @@ jobs:
     timeout-minutes: 25
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: 22
           cache: npm
@@ -52,11 +52,23 @@ jobs:
         working-directory: gui
         run: npm test
 
+      # Le paquet est construit pour que le test de fumee ne s'ignore pas.
+      # C'est lui qui aurait attrape le defaut le plus grave de ce projet :
+      # OpenSSL fonctionnait depuis les sources et echouait une fois copie
+      # dans le paquet. Sans cette etape, ce test ne s'execute jamais.
+      - name: Construire le paquet
+        working-directory: gui
+        run: npx electron-builder --dir
+
+      - name: Verifier le paquet livre
+        working-directory: gui
+        run: npx playwright test tests/paquet --project=app
+
       # Les traces ne sont produites qu'en cas d'echec, et c'est la seule
       # facon de comprendre un echec qu'on ne reproduit pas en local.
       - name: Conserver les traces d'echec
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: traces-playwright
           path: gui/test-results/
