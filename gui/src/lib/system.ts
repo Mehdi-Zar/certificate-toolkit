@@ -23,6 +23,7 @@ export function useSystem() {
       openDir: (path: string) => void run(api.system.openDir(path)),
       reveal: (path: string) => void run(api.system.reveal(path)),
       copy: (text: string) => void run(api.system.copy(text)),
+      openLog: () => void run(api.system.openLog()),
     }
   }, [toast])
 }

@@ -582,6 +582,11 @@ export const en: Record<MessageKey, string> = {
   'settings.subjectDefaults': 'Subject defaults',
   'settings.subjectDefaultsHelp':
     'Prefilled into new requests. Each request stays editable on its own.',
+  'settings.log': 'Log',
+  'settings.logBody':
+    'When a command fails, the reason is written here. The file never contains a private key, a certificate or a password: only the command that ran, its exit code and its error message.',
+  'settings.logEmpty': 'Nothing has been written yet: the log only records failures.',
+  'settings.logOpen': 'Open the log',
   'settings.privacy': 'Privacy',
   'settings.privacy1':
     'Private keys, CSRs and PFX files stay in the working folder. No data leaves this machine, and the application makes no network request.',

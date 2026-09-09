@@ -15,6 +15,7 @@ import { translator } from '../shared/i18n/index.ts'
 import { registerIpc } from './ipc.ts'
 import { installMenu } from './menu.ts'
 import { loadSettings } from './store.ts'
+import { notifyNow, stopWatching, watchRoot } from './watcher.ts'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
@@ -51,6 +52,10 @@ async function createWindow(): Promise<void> {
 
   win.once('ready-to-show', () => win?.show())
 
+  // Second filet, decrit dans watcher.ts : revenir sur la fenetre est le geste
+  // qui suit un depot de fichier fait ailleurs.
+  win.on('focus', () => notifyNow())
+
   // Les liens externes ne s'ouvrent jamais dans l'application.
   win.webContents.setWindowOpenHandler(({ url }) => {
     if (/^https?:\/\//.test(url)) void shell.openExternal(url)
@@ -83,12 +88,16 @@ if (!app.requestSingleInstanceLock()) {
     registerIpc()
     void createWindow()
 
+    // La veille suit la racine reglee, y compris quand on en change.
+    void loadSettings().then((s) => watchRoot(s.rootDir))
+
     app.on('activate', () => {
       if (BrowserWindow.getAllWindows().length === 0) void createWindow()
     })
   })
 
   app.on('window-all-closed', () => {
+    stopWatching()
     if (process.platform !== 'darwin') app.quit()
   })
 }

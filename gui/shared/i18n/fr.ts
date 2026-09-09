@@ -584,6 +584,12 @@ export const fr = {
   'settings.subjectDefaults': 'Valeurs par défaut du sujet',
   'settings.subjectDefaultsHelp':
     'Pré-remplissage des nouvelles demandes. Chaque demande reste modifiable individuellement.',
+  'settings.log': 'Journal',
+  'settings.logBody':
+    'Quand une commande échoue, la raison est écrite ici. Le fichier ne contient jamais de clé privée, de certificat ni de mot de passe : seulement la commande lancée, son code de retour et son message d’erreur.',
+  'settings.logEmpty':
+    'Rien n’y a encore été écrit : le journal ne consigne que les échecs.',
+  'settings.logOpen': 'Ouvrir le journal',
   'settings.privacy': 'Confidentialité',
   'settings.privacy1':
     'Les clés privées, les CSR et les PFX restent dans la racine de travail. Aucune donnée ne sort de ce poste, l’application n’émet aucune requête réseau.',

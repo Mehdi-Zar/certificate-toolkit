@@ -27,6 +27,8 @@ import { resolveOpenssl } from './openssl-path.ts'
 import { describeEntry, scanRoot } from './inventory.ts'
 import { Openssl } from './openssl.ts'
 import { listSignedFiles, makePfx } from './pfx.ts'
+import { log, logPath } from './log.ts'
+import { watchRoot } from './watcher.ts'
 import { loadSettings, saveSettings } from './store.ts'
 
 /** Enveloppe uniforme : le renderer n'a jamais a gerer un rejet de promesse. */
@@ -37,6 +39,7 @@ function handle<T>(channel: string, fn: (...args: never[]) => Promise<T>): void 
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err)
       console.error('[' + channel + ']', message)
+      log('appel refuse', { canal: channel, err: message })
       return { ok: false, error: message }
     }
   })
@@ -63,6 +66,8 @@ export function registerIpc(): void {
     const saved = await saveSettings(next)
     // Le menu natif ne se retraduit pas tout seul.
     buildMenu(translator(saved.language))
+    // Changer d'espace de travail deplace aussi ce qu'on surveille.
+    watchRoot(saved.rootDir)
     return saved
   })
 
@@ -194,4 +199,19 @@ export function registerIpc(): void {
     clipboard.writeText(text)
     return true
   })
+
+  /**
+   * Ouvre le journal dans l'editeur de texte du systeme. Le fichier peut ne
+   * pas exister encore : rien ne s'y ecrit tant que rien n'a echoue, et c'est
+   * une bonne nouvelle qu'il faut dire plutot que de laisser un clic sans
+   * effet.
+   */
+  handle<string>('log:open', async () => {
+    const path = logPath()
+    const err = await shell.openPath(path)
+    if (err) throw new Error(err)
+    return path
+  })
+
+  handle<string>('log:path', async () => logPath())
 }

@@ -2,7 +2,7 @@
  * Reglages : racine de travail, binaire openssl et valeurs par defaut du sujet.
  * Rien de secret n'est enregistre ici.
  */
-import { CheckCircle2, FolderOpen, RotateCcw, Save, XCircle } from 'lucide-react'
+import { CheckCircle2, FolderOpen, RotateCcw, Save, ScrollText, XCircle } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { LANGUAGES, type Lang } from '../../shared/i18n/index.ts'
 import type { Capabilities, Settings } from '../../shared/types.ts'
@@ -22,6 +22,7 @@ import {
 } from '../components/ui.tsx'
 import { api, message, unwrap } from '../lib/api.ts'
 import { useApp, useT } from '../lib/store.tsx'
+import { useSystem } from '../lib/system.ts'
 
 /** Ce que le binaire detecte sait faire : conditionne les choix du formulaire. */
 function CapabilityList({ caps }: { caps: Capabilities }) {
@@ -61,13 +62,23 @@ export function SettingsPage() {
   const t = useT()
   const toast = useToast()
 
+  const system = useSystem()
+
   const [draft, setDraft] = useState<Settings | null>(null)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [logPath, setLogPath] = useState<string | null>(null)
 
   useEffect(() => {
     if (settings) setDraft(structuredClone(settings))
   }, [settings])
+
+  // Le chemin du journal est affiche pour qu'on puisse le donner par ecrit,
+  // sans avoir a ouvrir le fichier ni a savoir ou l'application range ses
+  // affaires.
+  useEffect(() => {
+    void unwrap(api.system.logPath()).then(setLogPath, () => setLogPath(null))
+  }, [])
 
   if (!draft) {
     return (
@@ -304,6 +315,23 @@ export function SettingsPage() {
                 onChange={(e) => setDefault('email', e.target.value)}
               />
             </Field>
+          </Card>
+        </section>
+
+        <section>
+          <SectionTitle>{t('settings.log')}</SectionTitle>
+          <Card className="flex flex-col gap-3 p-5">
+            <p className="text-[13px] leading-relaxed text-muted">{t('settings.logBody')}</p>
+            <div className="flex flex-wrap items-center gap-3">
+              <Button icon={<ScrollText className="size-4" />} onClick={() => system.openLog()}>
+                {t('settings.logOpen')}
+              </Button>
+              {logPath && (
+                <span className="min-w-0 break-all font-mono text-[12px] text-subtle selectable">
+                  {logPath}
+                </span>
+              )}
+            </div>
           </Card>
         </section>
 

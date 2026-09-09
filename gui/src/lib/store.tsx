@@ -17,7 +17,8 @@ interface AppState {
   probe: OpensslProbe | null
   loading: boolean
   error: string | null
-  refresh: () => Promise<void>
+  /** quiet : relecture silencieuse, sans indicateur de chargement. */
+  refresh: (quiet?: boolean) => Promise<void>
   updateSettings: (next: Settings) => Promise<void>
 }
 
@@ -45,8 +46,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  const refresh = useCallback(async () => {
-    setLoading(true)
+  /**
+   * Relit reglages, sonde et inventaire.
+   *
+   * quiet sert aux rafraichissements qu'on n'a pas demandes : ceux declenches
+   * par un changement sur le disque. Sans lui, deposer un fichier ferait
+   * clignoter un indicateur de chargement sur toute la fenetre, pour une
+   * relecture qui dure quelques millisecondes.
+   */
+  const refresh = useCallback(async (quiet = false) => {
+    if (!quiet) setLoading(true)
     try {
       const [s, p] = await Promise.all([
         unwrap(api.settings.get()),
@@ -61,7 +70,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     } catch (err) {
       setError(message(err))
     } finally {
-      setLoading(false)
+      if (!quiet) setLoading(false)
     }
   }, [])
 
@@ -76,6 +85,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     void refresh()
   }, [refresh])
+
+  // L'espace de travail vit aussi hors de l'application : la reponse de
+  // l'autorite y est deposee depuis l'explorateur. On suit ce qui s'y passe
+  // plutot que d'attendre qu'on pense a actualiser.
+  useEffect(() => api.system.onWorkspaceChanged(() => void refresh(true)), [refresh])
 
   useEffect(() => {
     if (settings) document.documentElement.lang = settings.language

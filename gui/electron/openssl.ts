@@ -8,6 +8,7 @@
  *    fourni par l'utilisateur ne peut etre interprete comme une commande.
  */
 import { spawn } from 'node:child_process'
+import { log, redact } from './log.ts'
 import { translator, type Translate } from '../shared/i18n/index.ts'
 
 export interface RunOptions {
@@ -61,6 +62,10 @@ export class Openssl {
   /** Execute openssl. Ne rejette jamais sur un code de sortie non nul. */
   run(args: string[], opts: RunOptions = {}): Promise<RunResult> {
     return new Promise((resolve, reject) => {
+      // Ce qui est journalise : la commande et son issue. Jamais opts.input,
+      // qui porte les cles privees et les certificats.
+      const started = Date.now()
+      const line = redact(args)
       const child = spawn(this.bin, args, {
         cwd: opts.cwd,
         env: { ...process.env, ...this.baseEnv, ...opts.env },
@@ -76,6 +81,7 @@ export class Openssl {
         if (settled) return
         settled = true
         child.kill()
+        log('openssl expire', { cmd: line, apres_ms: TIMEOUT_MS })
         reject(new OpensslError(this.t('err.opensslTimeout', { sec: TIMEOUT_MS / 1000 }), args, stderr))
       }, TIMEOUT_MS)
 
@@ -92,6 +98,7 @@ export class Openssl {
           (err as NodeJS.ErrnoException).code === 'ENOENT'
             ? this.t('err.opensslMissing', { bin: this.bin })
             : err.message
+        log('openssl injoignable', { cmd: line, bin: this.bin, err: err.message })
         reject(new OpensslError(hint, args, stderr))
       })
 
@@ -100,6 +107,16 @@ export class Openssl {
         settled = true
         clearTimeout(timer)
         const buf = Buffer.concat(stdout)
+        if (code !== 0) {
+          // Seuls les echecs sont ecrits : un journal qui note chaque succes
+          // noie le seul evenement qu'on vient y chercher.
+          log('openssl echoue', {
+            cmd: line,
+            code,
+            ms: Date.now() - started,
+            stderr: stderr.trim().split(/\r?\n/).filter(Boolean).slice(-2).join(' / '),
+          })
+        }
         resolve({
           code: code ?? -1,
           stdout: buf,

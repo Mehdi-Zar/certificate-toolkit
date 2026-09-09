@@ -104,6 +104,11 @@ export function DetailPage({ fqdn, navigate }: { fqdn: string; navigate: (r: Rou
     void reload()
   }, [reload])
 
+  // C'est ici qu'on attend la reponse de l'autorite, et c'est ici qu'on la
+  // depose depuis l'explorateur. La fiche doit donc suivre le dossier sans
+  // qu'on ait a la quitter puis y revenir.
+  useEffect(() => api.system.onWorkspaceChanged(() => void reload()), [reload])
+
   const afterWrite = async () => {
     await reload()
     await refresh()

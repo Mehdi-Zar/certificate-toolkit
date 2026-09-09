@@ -50,6 +50,18 @@ const api = {
     reveal: (path: string) => call<boolean>('shell:reveal', path),
     openDir: (path: string) => call<boolean>('shell:openDir', path),
     copy: (text: string) => call<boolean>('clipboard:write', text),
+    /** Ouvre le journal de l'application, et renvoie son chemin. */
+    openLog: () => call<string>('log:open'),
+    logPath: () => call<string>('log:path'),
+    /**
+     * Prevenu quand l'espace de travail a change sur le disque, y compris par
+     * une action faite hors de l'application. Renvoie de quoi se desabonner.
+     */
+    onWorkspaceChanged: (fn: () => void): (() => void) => {
+      const listener = () => fn()
+      ipcRenderer.on('inventory:changed', listener)
+      return () => ipcRenderer.removeListener('inventory:changed', listener)
+    },
     /**
      * Chemin reel d'un fichier glisse-depose. Depuis Electron 32, File.path
      * n'existe plus : webUtils est la seule voie.
