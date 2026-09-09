@@ -89,7 +89,8 @@ export function Hint({ text, label }: { text: string; label?: string }) {
         onBlur={hide}
         onClick={(e) => {
           e.preventDefault()
-          open ? hide() : show()
+          if (open) hide()
+          else show()
         }}
         className={cx(
           'inline-grid size-4 shrink-0 place-items-center rounded-full align-middle transition-colors',

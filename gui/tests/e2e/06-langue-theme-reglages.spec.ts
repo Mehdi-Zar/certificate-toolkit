@@ -85,7 +85,7 @@ test('le theme se change et se retient', async () => {
   let ctx: Launched | undefined
   try {
     ctx = await launchApp()
-    const { page, userData } = ctx
+    const { page } = ctx
     const root = page.locator('html')
 
     await page.locator('aside').getByRole('button', { name: 'Thème sombre' }).click()

@@ -44,8 +44,19 @@ function markdownFiles(dir, out = []) {
   return out
 }
 
+/**
+ * Les catalogues de traduction sont le seul code que lit un utilisateur. La
+ * meme typographie s'y applique donc qu'aux documents : un tiret cadratin dans
+ * une infobulle se voit autant que dans un fichier .md, et rien d'autre ne
+ * l'attraperait.
+ */
+const CATALOGUES = ['gui/shared/i18n/fr.ts', 'gui/shared/i18n/en.ts', 'gui/shared/i18n/index.ts']
+  .map((r) => join(ROOT, r))
+  .filter((f) => existsSync(f))
+
 const problems = []
-const files = markdownFiles(ROOT)
+const docs = markdownFiles(ROOT)
+const files = [...docs, ...CATALOGUES]
 
 for (const file of files) {
   const rel = relative(ROOT, file).replace(/\\/g, '/')
@@ -67,6 +78,9 @@ for (const file of files) {
     }
   })
 
+  // Ce qui suit ne concerne que les documents.
+  if (!file.endsWith('.md')) continue
+
   // Liens internes : [texte](chemin) hors http, mailto et ancres.
   for (const m of text.matchAll(/\[[^\]]*\]\(([^)]+)\)/g)) {
     const target = m[1].split('#')[0].trim()
@@ -78,7 +92,9 @@ for (const file of files) {
   }
 }
 
-console.log('\nControle de la documentation : ' + files.length + ' fichiers')
+console.log(
+  '\nControle : ' + docs.length + ' documents, ' + CATALOGUES.length + ' catalogues',
+)
 
 if (problems.length === 0) {
   console.log('  aucun probleme\n')

@@ -20,5 +20,13 @@
     "baseUrl": ".",
     "paths": { "@/*": ["./src/*"], "@shared/*": ["./shared/*"] }
   },
-  "include": ["src", "electron", "shared", "vite.config.ts"]
+  "include": [
+    "src",
+    "electron",
+    "shared",
+    "tests",
+    "vite.config.ts",
+    "playwright.config.ts",
+    "eslint.config.js"
+  ]
 }
