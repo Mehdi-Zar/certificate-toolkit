@@ -32,6 +32,7 @@ Chaque page répond à un seul besoin. Partez de celui que vous avez.
 | [Sécurité](securite.md) | Ce qui est protégé, contre quoi, et ce qui ne l'est pas |
 | [Décisions](decisions.md) | Les choix tranchés, avec leurs conséquences |
 | [Dette et risques](dette.md) | Ce qui ne tient pas encore |
+| [Améliorations](ameliorations.md) | Ce qui tient, et pourrait tenir mieux |
 
 Le guide du développeur est dans [gui/README.md](../gui/README.md).
 

@@ -12,8 +12,13 @@ import { fr, type MessageKey } from './fr.ts'
 export type { MessageKey }
 export type Lang = 'fr' | 'en'
 
+/**
+ * Chaque langue se nomme dans sa propre langue, correctement ecrite : c'est le
+ * premier mot que voit un utilisateur francophone, et une cedille manquante y
+ * est plus visible que partout ailleurs.
+ */
 export const LANGUAGES: Array<{ value: Lang; short: string; label: string }> = [
-  { value: 'fr', short: 'FR', label: 'Francais' },
+  { value: 'fr', short: 'FR', label: 'Français' },
   { value: 'en', short: 'EN', label: 'English' },
 ]
 

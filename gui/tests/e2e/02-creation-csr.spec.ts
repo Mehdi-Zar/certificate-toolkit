@@ -61,6 +61,14 @@ test('creer une demande, de la saisie au fichier sur le disque', async () => {
       await expect(page.locator('#mail')).toHaveAttribute('placeholder', /@/)
     })
 
+    await test.step("le nom accessible d'un champ est son libelle, rien de plus", async () => {
+      // Le bouton d'aide est accole au libelle, pas dedans : imbrique, il
+      // entrait dans le nom du champ, annonce alors "Nom du serveur Aide :
+      // Nom du serveur". Le test le fige, l'erreur etant invisible a l'ecran.
+      await expect(page.locator('#cn')).toHaveAccessibleName('Nom du serveur')
+      await expect(page.getByRole('button', { name: /^Aide : / }).first()).toBeVisible()
+    })
+
     await test.step('rien ne peut etre genere tant que le nom manque', async () => {
       await expect(page.getByRole('button', { name: 'Générer la clé et la CSR' })).toBeDisabled()
     })

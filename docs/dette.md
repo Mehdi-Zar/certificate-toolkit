@@ -40,19 +40,23 @@ mode sans interface. Aucun des deux n'est engagé.
 **Risque.** Quelqu'un automatise avec les scripts en croyant obtenir ce que
 produit l'interface.
 
-### Les tests ne sont pas dans le dépôt
+### Les vérifications du moteur ne sont pas dans le dépôt
 
-Deux suites existent et passent, 99 vérifications au total : le moteur de
-génération, et une régression d'assemblage sur un vrai retour d'autorité.
+Une suite de bout en bout est désormais versionnée : 22 tests dans
+`gui/tests/`, du premier écran jusqu'au PFX ouvert avec son mot de passe.
+L'assemblage est couvert par une autorité de certification créée à la volée
+(`gui/tests/helpers/ca.ts`), ce qui lève la dépendance à des données réelles
+qui tenait ces tests dehors.
 
-Elles vivent hors du dépôt parce que la seconde dépend de données réelles,
-donc exclues du versionnement.
+Reste dehors la suite du moteur de génération, 99 vérifications, écrite avant
+que le dépôt n'ait de cadre de test.
 
-**Remède.** Réécrire la régression contre une autorité de test créée à la
-volée, puis verser les deux suites et les brancher en intégration continue.
+**Remède.** La verser en tests unitaires dans le même répertoire, sous le même
+`npm test`.
 
-**Risque.** Rien ne garantit qu'une modification future ne casse pas
-l'assemblage. C'est la dette la plus coûteuse de cette liste.
+**Risque.** Réduit mais pas nul : le moteur de génération n'est vérifié que par
+ce que le parcours de bout en bout traverse, soit une partie des combinaisons
+d'extensions qu'ouvre le mode avancé.
 
 ### Seul Windows est vérifié
 
@@ -68,8 +72,12 @@ copie d'OpenSSL comme sous Windows.
 Rien ne vérifie automatiquement que le code compile, que les tests passent ou
 que la documentation reste juste.
 
+C'est devenu plus coûteux qu'avant : la suite de bout en bout tourne en
+cinquante secondes et a trouvé dix défauts réels, mais elle n'est lancée que
+par qui y pense.
+
 **Remède.** Un workflow qui lance le typage, les tests et le contrôle de
-documentation à chaque poussée.
+documentation à chaque poussée. Voir [Améliorations](ameliorations.md).
 
 ---
 

@@ -26,6 +26,8 @@ test('l’application bascule en anglais, interface et processus principal', asy
     await test.step("le selecteur de langue est dans la barre laterale", async () => {
       const picker = page.locator('aside').getByRole('group', { name: /Langue|Language/ })
       await expect(picker).toBeVisible()
+      // Chaque langue se nomme dans sa langue, cedille comprise.
+      await expect(picker.getByRole('button', { name: 'Français' })).toBeVisible()
       await picker.getByRole('button', { name: 'English' }).click()
     })
 
@@ -71,7 +73,7 @@ test('l’application bascule en anglais, interface et processus principal', asy
     })
 
     await test.step('et le retour au francais est immediat', async () => {
-      await page.locator('aside').getByRole('button', { name: 'Francais' }).click()
+      await page.locator('aside').getByRole('button', { name: 'Français' }).click()
       await expect(page.locator('nav').getByText('Le parcours')).toBeVisible()
     })
   } finally {

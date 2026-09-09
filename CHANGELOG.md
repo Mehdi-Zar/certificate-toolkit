@@ -2,6 +2,41 @@
 
 Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## [Non publié]
+
+### Corrigé
+
+- **La copie d'OpenSSL embarquée ne trouvait pas sa configuration.** Toute
+  commande sans `-config` explicite échouait, dont la vérification finale d'une
+  demande : **la version 1.0.0 publiée ne sait pas produire de CSR.** Le
+  fichier `openssl.cnf` est désormais embarqué et désigné par `OPENSSL_CONF`,
+  et la vérification d'empaquetage fait un aller-retour complet au lieu d'un
+  simple `openssl version`, qui ne lit aucune configuration.
+- **Une adresse IP saisie en nom alternatif était enregistrée comme nom DNS.**
+  La détection de type ne l'emportait pas sur le sélecteur.
+- **Un SAN de type IP était toujours rapporté absent du certificat signé.**
+  OpenSSL imprime `IP Address:`, la comparaison attendait `IPAddress:`.
+- **Le message affiché quand aucun certificat ne correspond à la clé privée**
+  était écrit en dur, sans accents, et restait en français en session anglaise.
+- **Le champ de l'espace de travail portait `id="root"`**, déjà pris par le
+  point de montage : son étiquette désignait le mauvais élément.
+- **Le bouton d'aide était imbriqué dans le libellé du champ**, ce qui le
+  faisait entrer dans le nom accessible de la saisie.
+- **Les messages d'erreur n'étaient pas rattachés à leur champ.** Ils
+  s'affichaient sans jamais être annoncés par un lecteur d'écran.
+- **« Créer une demande » restait sans effet depuis l'écran de confirmation.**
+  Il fallait passer par le tableau de bord pour en commencer une autre.
+- **« Francais » s'écrivait sans cédille** dans le sélecteur de langue.
+
+### Ajouté
+
+- **Suite de bout en bout** : 22 tests qui pilotent l'application réelle, du
+  premier écran jusqu'au PFX ouvert avec son mot de passe. L'assemblage est
+  vérifié contre une autorité de certification créée pour la durée du test, ce
+  qui rend la suite autonome. `npm test`.
+- **[Améliorations identifiées](docs/ameliorations.md)** : onze propositions
+  classées, avec ce qu'elles coûtent et ce qu'elles apportent.
+
 ## [1.0.0] 2026-09-08
 
 Première version publiée.

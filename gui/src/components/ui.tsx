@@ -4,9 +4,11 @@
  */
 import { Loader2 } from 'lucide-react'
 import { Hint } from './Hint.tsx'
+import { cloneElement, isValidElement } from 'react'
 import type {
   ButtonHTMLAttributes,
   InputHTMLAttributes,
+  ReactElement,
   ReactNode,
   SelectHTMLAttributes,
 } from 'react'
@@ -87,21 +89,55 @@ interface FieldProps {
   className?: string
 }
 
+/**
+ * Un libelle, le champ, et ce qui se dit autour.
+ *
+ * Deux details d'accessibilite qui ne se voient pas a l'ecran :
+ *
+ * Le bouton d'aide est pose a cote du libelle, pas dedans. Un controle place
+ * dans un <label> entre dans le nom accessible du champ : la saisie du mot de
+ * passe s'annoncait « Mot de passe du PFX Aide : Mot de passe du PFX ».
+ *
+ * La ligne d'aide et le message d'erreur sont rattaches au champ par
+ * aria-describedby. Sans cela, un lecteur d'ecran annonce le libelle et rien
+ * d'autre : l'erreur est affichee juste en dessous mais reste muette, et la
+ * personne qui l'entend le moins est celle qui en a le plus besoin.
+ */
 export function Field({ label, hint, help, error, htmlFor, children, className }: FieldProps) {
+  const noteId = htmlFor ? htmlFor + '-note' : undefined
+  const described = noteId && (error || hint) ? noteId : undefined
+
   return (
     <div className={cx('flex flex-col gap-1.5', className)}>
-      <label htmlFor={htmlFor} className="flex items-center gap-1.5 text-[13px] font-medium text-ink">
-        {label}
+      <div className="flex items-center gap-1.5 text-[13px] font-medium text-ink">
+        <label htmlFor={htmlFor}>{label}</label>
         {help && <Hint text={help} label={label} />}
-      </label>
-      {children}
+      </div>
+
+      {described && isValidElement(children)
+        ? cloneElement(children as ReactElement<Describable>, {
+            'aria-describedby': described,
+            'aria-invalid': error ? true : undefined,
+          })
+        : children}
+
       {error ? (
-        <p className="text-[12px] text-danger">{error}</p>
+        <p id={noteId} className="text-[12px] text-danger" role="alert">
+          {error}
+        </p>
       ) : hint ? (
-        <p className="text-[12px] text-subtle leading-relaxed">{hint}</p>
+        <p id={noteId} className="text-[12px] text-subtle leading-relaxed">
+          {hint}
+        </p>
       ) : null}
     </div>
   )
+}
+
+/** Les attributs que Field ajoute au controle qu'on lui confie. */
+interface Describable {
+  'aria-describedby'?: string
+  'aria-invalid'?: boolean
 }
 
 const CONTROL =
@@ -145,36 +181,44 @@ export function Check({
   tone = 'default',
   disabled,
 }: CheckProps) {
+  // Le bouton d'aide reste hors du <label>, pour la meme raison que dans
+  // Field : un controle imbrique entre dans le nom accessible de la case.
   return (
-    <label
+    <div
       className={cx(
         'flex gap-2.5 items-start rounded-lg p-2.5 -mx-2.5 transition-colors',
-        disabled ? 'opacity-50' : 'cursor-pointer hover:bg-inset',
+        disabled ? 'opacity-50' : 'hover:bg-inset',
       )}
     >
-      <input
-        type="checkbox"
-        checked={checked}
-        disabled={disabled}
-        onChange={(e) => onChange(e.target.checked)}
-        className={cx(
-          'mt-0.5 size-4 shrink-0 rounded border-line-strong bg-surface',
-          tone === 'danger' ? 'accent-[var(--danger)]' : 'accent-[var(--accent)]',
-        )}
-      />
-      <span className="min-w-0">
-        <span
+      <label className={cx('flex min-w-0 flex-1 gap-2.5', disabled ? '' : 'cursor-pointer')}>
+        <input
+          type="checkbox"
+          checked={checked}
+          disabled={disabled}
+          onChange={(e) => onChange(e.target.checked)}
           className={cx(
-            'flex items-center gap-1.5 text-[13px] font-medium',
-            tone === 'danger' ? 'text-danger' : 'text-ink',
+            'mt-0.5 size-4 shrink-0 rounded border-line-strong bg-surface',
+            tone === 'danger' ? 'accent-[var(--danger)]' : 'accent-[var(--accent)]',
           )}
-        >
-          {label}
-          {help && <Hint text={help} label={label} />}
+        />
+        <span className="min-w-0">
+          <span
+            className={cx(
+              'block text-[13px] font-medium',
+              tone === 'danger' ? 'text-danger' : 'text-ink',
+            )}
+          >
+            {label}
+          </span>
+          {hint && <span className="block text-[12px] text-subtle leading-relaxed">{hint}</span>}
         </span>
-        {hint && <span className="block text-[12px] text-subtle leading-relaxed">{hint}</span>}
-      </span>
-    </label>
+      </label>
+      {help && (
+        <span className="mt-0.5 shrink-0">
+          <Hint text={help} label={label} />
+        </span>
+      )}
+    </div>
   )
 }
 
