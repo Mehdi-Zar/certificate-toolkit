@@ -51,6 +51,9 @@ export const en: Record<MessageKey, string> = {
     'The working folder holds no request yet. Start by generating a CSR.',
   'list.noResultTitle': 'No match',
   'list.noResultDesc': 'No request matches this filter.',
+  'list.sort': 'Sort',
+  'list.sortStage': 'By stage',
+  'list.sortRecent': 'Most recent',
   'list.keyUnknown': 'unknown key',
   'list.extraSans': '{n} more SAN(s)',
   'list.filesReceived': '{n} file(s) received',
@@ -456,6 +459,8 @@ export const en: Record<MessageKey, string> = {
   'new.readyKey': '{desc} private key generated.',
   'new.readyKeyWarn':
     'It must never leave this machine: the authority only needs the CSR.',
+  'new.readyKeyBackup':
+    'It cannot be regenerated: the certificate the CA sends back is useless without it. Copy this folder somewhere else before sending the request, and you will not have to start over if this machine fails.',
   'new.readyFollow': 'Follow this request',
   'new.readyCopy': 'Copy the CSR',
   'new.readyRequested': 'What was requested',
@@ -506,6 +511,10 @@ export const en: Record<MessageKey, string> = {
     'It protects the private key inside the container. Send it separately from the file.',
   'detail.pfxPasswordHelp':
     'The PFX holds the private key. Without a strong password the file is worth the key itself. Send it through a different channel than the file.',
+  'detail.suggest': 'Suggest',
+  'detail.suggestHelp':
+    'Draws a strong random password, fills both fields, shows it and copies it. Save it right away: the application keeps it nowhere.',
+  'detail.suggested': 'Password copied. Save it now: it will not be kept.',
   'detail.confirm': 'Confirmation',
   'detail.mismatch': 'The two entries differ.',
   'detail.advancedOptions': 'Advanced options',
@@ -545,6 +554,15 @@ export const en: Record<MessageKey, string> = {
   'detail.fileFullchain': 'Leaf + chain (nginx, HAProxy)',
   'detail.importWindows': 'Import into the Windows store:',
   'detail.toastAssembled': 'PFX assembled: {name}',
+  'detail.archive': 'Put away',
+  'detail.archiveHelp':
+    'Takes this folder out of the list without deleting anything: it moves to the .archive subfolder of your working folder. A deleted private key cannot be recovered, and a certificate already deployed would stop working: that is why nothing is destroyed here.',
+  'detail.archiveConfirmTitle': 'Put {name} away?',
+  'detail.archiveConfirmBody':
+    'The folder moves to .archive, inside your working folder. Nothing is deleted, and you can put it back with the file explorer.',
+  'detail.archiveConfirmOk': 'Put away',
+  'detail.archived': '{name} moved to .archive',
+  'detail.openArchive': 'Open .archive',
   'detail.csrTitle': 'Signing request',
 
   // -------------------------------------------------------------------------

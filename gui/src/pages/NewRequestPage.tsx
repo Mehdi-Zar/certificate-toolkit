@@ -1441,6 +1441,9 @@ function CsrReady({ result, navigate }: { result: CsrResult; navigate: (r: Route
             <p className="font-medium">{t('new.readyKey', { desc: result.keyDesc })}</p>
             <p className="mt-0.5 break-all opacity-90 selectable">{result.keyPath}</p>
             <p className="mt-1.5 opacity-90">{t('new.readyKeyWarn')}</p>
+            {/* Une cle perdue entre l'envoi et le retour de la PKI rend le
+                certificat signe inutilisable, et rien ne le disait. */}
+            <p className="mt-1.5 font-medium">{t('new.readyKeyBackup')}</p>
           </div>
           <Button
             size="sm"

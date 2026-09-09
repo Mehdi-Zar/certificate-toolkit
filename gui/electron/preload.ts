@@ -44,9 +44,16 @@ const api = {
   pfx: {
     make: (req: PfxRequest) => call<PfxResult>('pfx:make', req),
   },
+  entry: {
+    /** Deplace le dossier sous .archive/ et renvoie sa nouvelle place. */
+    archive: (fqdn: string) => call<string>('entry:archive', fqdn),
+    openArchive: () => call<boolean>('entry:openArchive'),
+  },
   system: {
     pickDir: () => call<string | null>('dialog:pickDir'),
     pickFiles: (title: string) => call<string[]>('dialog:pickFiles', title),
+    confirm: (title: string, body: string, ok: string) =>
+      call<boolean>('dialog:confirm', title, body, ok),
     reveal: (path: string) => call<boolean>('shell:reveal', path),
     openDir: (path: string) => call<boolean>('shell:openDir', path),
     copy: (text: string) => call<boolean>('clipboard:write', text),

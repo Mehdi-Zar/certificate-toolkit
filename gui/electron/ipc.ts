@@ -6,7 +6,7 @@
  * renderer recoit un message d'erreur affichable.
  */
 import { BrowserWindow, clipboard, dialog, ipcMain, shell } from 'electron'
-import { copyFile, mkdir, readFile } from 'node:fs/promises'
+import { copyFile, mkdir, readFile, rename } from 'node:fs/promises'
 import { basename, join, normalize } from 'node:path'
 import type {
   CertEntry,
@@ -180,6 +180,33 @@ export function registerIpc(): void {
     return r.canceled ? [] : r.filePaths
   })
 
+  /**
+   * Confirmation modale, rendue par le systeme.
+   *
+   * Une boite native plutot qu'un panneau dessine : elle bloque reellement la
+   * fenetre, elle est annoncee comme un dialogue par les outils
+   * d'accessibilite, et Echap l'annule sans qu'on ait a le programmer.
+   */
+  handle<boolean>('dialog:confirm', async (title: string, body: string, ok: string) => {
+    const win = focused()
+    const t = await lang()
+    const buttons = [ok, t('common.cancel')]
+    const r = win
+      ? await dialog.showMessageBox(win, {
+          type: 'question',
+          title,
+          message: title,
+          detail: body,
+          buttons,
+          defaultId: 0,
+          // Echap et la croix reviennent sur Annuler, jamais sur l'action.
+          cancelId: 1,
+          noLink: true,
+        })
+      : { response: 1 }
+    return r.response === 0
+  })
+
   handle<boolean>('shell:reveal', async (path: string) => {
     shell.showItemInFolder(path)
     return true
@@ -214,4 +241,40 @@ export function registerIpc(): void {
   })
 
   handle<string>('log:path', async () => logPath())
+
+  /**
+   * Range un dossier hors de la liste, sans rien detruire.
+   *
+   * Il n'y a volontairement pas de suppression. Effacer une cle privee est
+   * irreversible, et peut rendre inutilisable un certificat deja deploye
+   * ailleurs : le dossier est deplace sous .archive/, que le scan ignore
+   * puisqu'il saute tout ce qui commence par un point. On recupere donc a la
+   * main ce qu'on a range par erreur, avec l'explorateur et sans nous.
+   *
+   * L'horodatage evite d'ecraser une archive precedente portant le meme nom,
+   * ce qui arrive des qu'on refait une demande sous le meme FQDN.
+   */
+  handle<string>('entry:archive', async (fqdn: string) => {
+    const settings = await loadSettings()
+    const t = translator(settings.language)
+    const p = pathsFor(settings.rootDir, fqdn, t)
+
+    const stamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19)
+    const attic = join(settings.rootDir, '.archive')
+    await mkdir(attic, { recursive: true })
+    const target = join(attic, fqdn + '-' + stamp)
+
+    await rename(p.dir, target)
+    log('dossier archive', { fqdn, vers: target })
+    return target
+  })
+
+  handle<boolean>('entry:openArchive', async () => {
+    const settings = await loadSettings()
+    const attic = join(settings.rootDir, '.archive')
+    await mkdir(attic, { recursive: true })
+    const err = await shell.openPath(attic)
+    if (err) throw new Error(err)
+    return true
+  })
 }

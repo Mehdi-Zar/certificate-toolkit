@@ -51,6 +51,9 @@ export const fr = {
     'La racine de travail ne contient encore aucun dossier de demande. Commencez par générer une CSR.',
   'list.noResultTitle': 'Aucun résultat',
   'list.noResultDesc': 'Aucun dossier ne correspond à ce filtre.',
+  'list.sort': 'Trier',
+  'list.sortStage': 'Par étape',
+  'list.sortRecent': 'Plus récents',
   'list.keyUnknown': 'clé inconnue',
   'list.extraSans': '{n} SAN supplémentaire(s)',
   'list.filesReceived': '{n} fichier(s) reçu(s)',
@@ -457,6 +460,8 @@ export const fr = {
   'new.readyKey': 'Clé privée {desc} générée.',
   'new.readyKeyWarn':
     'Elle ne doit jamais quitter ce poste : la PKI n’a besoin que de la CSR.',
+  'new.readyKeyBackup':
+    'Elle ne peut pas être régénérée : le certificat que la PKI renverra ne sert à rien sans elle. Copiez ce dossier ailleurs avant d’envoyer la demande, et vous ne recommencerez pas si ce poste tombe.',
   'new.readyFollow': 'Suivre cette demande',
   'new.readyCopy': 'Copier la CSR',
   'new.readyRequested': 'Ce qui a été demandé',
@@ -507,6 +512,11 @@ export const fr = {
     'Il protège la clé privée dans le conteneur. Transmettez-le séparément du fichier.',
   'detail.pfxPasswordHelp':
     'Le PFX contient la clé privée. Sans mot de passe solide, le fichier vaut la clé elle-même. Envoyez-le par un canal différent de celui du fichier.',
+  'detail.suggest': 'Proposer',
+  'detail.suggestHelp':
+    'Tire un mot de passe solide au hasard, le remplit dans les deux champs, l’affiche et le copie. Enregistrez-le tout de suite : l’application ne le conserve nulle part.',
+  'detail.suggested':
+    'Mot de passe copié. Enregistrez-le maintenant : il ne sera pas conservé.',
   'detail.confirm': 'Confirmation',
   'detail.mismatch': 'Les deux saisies diffèrent.',
   'detail.advancedOptions': 'Options avancées',
@@ -547,6 +557,15 @@ export const fr = {
   'detail.fileFullchain': 'Feuille + chaîne (nginx, HAProxy)',
   'detail.importWindows': 'Import dans le magasin Windows :',
   'detail.toastAssembled': 'PFX assemblé : {name}',
+  'detail.archive': 'Ranger',
+  'detail.archiveHelp':
+    'Sort ce dossier de la liste sans rien effacer : il est déplacé dans le sous-dossier .archive de votre espace de travail. Une clé privée supprimée ne se retrouve pas, et un certificat déjà déployé cesserait de fonctionner : c’est pourquoi rien n’est détruit ici.',
+  'detail.archiveConfirmTitle': 'Ranger {name} ?',
+  'detail.archiveConfirmBody':
+    'Le dossier sera déplacé dans .archive, dans votre espace de travail. Rien n’est effacé, et vous pouvez le remettre en place avec l’explorateur.',
+  'detail.archiveConfirmOk': 'Ranger',
+  'detail.archived': '{name} rangé dans .archive',
+  'detail.openArchive': 'Ouvrir .archive',
   'detail.csrTitle': 'Demande de signature',
 
   // -------------------------------------------------------------------------

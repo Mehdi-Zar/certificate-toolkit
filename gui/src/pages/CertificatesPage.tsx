@@ -13,7 +13,17 @@ import {
 import { useEffect, useMemo, useState } from 'react'
 import type { CertEntry } from '../../shared/types.ts'
 import { PageBody, PageHeader } from '../components/PageHeader.tsx'
-import { Badge, Button, Card, EmptyState, ErrorBanner, Input, Spinner, cx } from '../components/ui.tsx'
+import {
+  Badge,
+  Button,
+  Card,
+  EmptyState,
+  ErrorBanner,
+  Input,
+  Select,
+  Spinner,
+  cx,
+} from '../components/ui.tsx'
 import type { ListFilter, Route } from '../App.tsx'
 import { getTemplate } from '../../shared/templates.ts'
 import type { Translate } from '../../shared/i18n/index.ts'
@@ -31,6 +41,7 @@ export function CertificatesPage({
   const { entries, settings, loading, error, refresh } = useApp()
   const t = useT()
   const [query, setQuery] = useState('')
+  const [sort, setSort] = useState<'stage' | 'recent'>('stage')
   // Le filtre vient de la barre laterale, et suit ses changements.
   const [filter, setFilter] = useState<ListFilter>(initial)
   useEffect(() => setFilter(initial), [initial])
@@ -53,7 +64,7 @@ export function CertificatesPage({
 
   const visible = useMemo(() => {
     const q = query.trim().toLowerCase()
-    return entries.filter((e) => {
+    const kept = entries.filter((e) => {
       if (filter !== 'all' && e.status !== filter) return false
       if (!q) return true
       return (
@@ -61,7 +72,14 @@ export function CertificatesPage({
         e.sans.some((s) => s.toLowerCase().includes(q))
       )
     })
-  }, [entries, query, filter])
+
+    // L'inventaire arrive deja trie par etape puis par nom, ce qui met en tete
+    // ce qui demande une action. C'est le bon ordre quand la liste est courte.
+    // Passe une cinquantaine d'entrees, retrouver celle d'hier demande plutot
+    // une date, d'ou le second ordre.
+    if (sort === 'stage') return kept
+    return [...kept].sort((a, b) => (b.createdAt ?? '').localeCompare(a.createdAt ?? ''))
+  }, [entries, query, filter, sort])
 
   return (
     <>
@@ -117,6 +135,16 @@ export function CertificatesPage({
                 <span className="text-subtle">{counts.shown}</span>
               </Button>
             )}
+
+            <Select
+              value={sort}
+              aria-label={t('list.sort')}
+              onChange={(e) => setSort(e.target.value as 'stage' | 'recent')}
+              className="ml-auto w-auto"
+            >
+              <option value="stage">{t('list.sortStage')}</option>
+              <option value="recent">{t('list.sortRecent')}</option>
+            </Select>
           </div>
         )}
 

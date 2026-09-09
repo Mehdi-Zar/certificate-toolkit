@@ -4,6 +4,7 @@
  * qui attend une action est ouverte.
  */
 import {
+  Archive,
   Check,
   Copy,
   Eye,
@@ -14,6 +15,7 @@ import {
   Inbox,
   Package,
   ShieldCheck,
+  Sparkles,
   Upload,
 } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
@@ -22,6 +24,7 @@ import type { CertEntry, CertInfo, Check as CheckResult, PfxResult } from '../..
 import type { Route } from '../App.tsx'
 import { FlowStepper } from '../components/FlowStepper.tsx'
 import { FormatTable } from '../components/FormatTable.tsx'
+import { Hint } from '../components/Hint.tsx'
 import { PageBody, PageHeader } from '../components/PageHeader.tsx'
 import { useToast } from '../components/Toast.tsx'
 import {
@@ -40,6 +43,7 @@ import {
   cx,
 } from '../components/ui.tsx'
 import { api, message, unwrap } from '../lib/api.ts'
+import { suggestPassword } from '../lib/password.ts'
 import type { Lang, Translate } from '../../shared/i18n/index.ts'
 import {
   STATUS_TONE,
@@ -83,6 +87,7 @@ function ExistingFiles({ entry, t }: { entry: CertEntry; t: Translate }) {
 export function DetailPage({ fqdn, navigate }: { fqdn: string; navigate: (r: Route) => void }) {
   const { refresh, settings } = useApp()
   const t = useT()
+  const toast = useToast()
   const system = useSystem()
   const lang: Lang = settings?.language ?? 'fr'
   const [entry, setEntry] = useState<CertEntry | null>(null)
@@ -112,6 +117,31 @@ export function DetailPage({ fqdn, navigate }: { fqdn: string; navigate: (r: Rou
   const afterWrite = async () => {
     await reload()
     await refresh()
+  }
+
+  /**
+   * Range le dossier, apres confirmation. On revient a la liste : rester sur
+   * la fiche d'un dossier qui n'est plus la n'aurait aucun sens.
+   */
+  async function archive() {
+    if (!entry) return
+    const ok = await unwrap(
+      api.system.confirm(
+        t('detail.archiveConfirmTitle', { name: entry.fqdn }),
+        t('detail.archiveConfirmBody'),
+        t('detail.archiveConfirmOk'),
+      ),
+    ).catch(() => false)
+    if (!ok) return
+
+    try {
+      await unwrap(api.entry.archive(entry.fqdn))
+      toast('success', t('detail.archived', { name: entry.fqdn }))
+      await refresh()
+      navigate({ name: 'list' })
+    } catch (err) {
+      toast('error', message(err))
+    }
   }
 
   if (loading) {
@@ -154,13 +184,25 @@ export function DetailPage({ fqdn, navigate }: { fqdn: string; navigate: (r: Rou
         description={t(statusHintKey(entry.status))}
         back={<BackLink label={t('new.backToList')} onClick={() => navigate({ name: 'list' })} />}
         actions={
-          <Button
-            size="sm"
-            icon={<FolderOpen className="size-3.5" />}
-            onClick={() => system.openDir(entry.dir)}
-          >
-            {t('common.openFolder')}
-          </Button>
+          <>
+            <Button
+              size="sm"
+              icon={<FolderOpen className="size-3.5" />}
+              onClick={() => system.openDir(entry.dir)}
+            >
+              {t('common.openFolder')}
+            </Button>
+            <span className="flex items-center gap-1.5">
+              <Button
+                size="sm"
+                icon={<Archive className="size-3.5" />}
+                onClick={() => void archive()}
+              >
+                {t('detail.archive')}
+              </Button>
+              <Hint text={t('detail.archiveHelp')} label={t('detail.archive')} />
+            </span>
+          </>
         }
       />
 
@@ -453,6 +495,7 @@ function StepSigned({ entry, onChange }: { entry: CertEntry; onChange: () => Pro
 function StepPfx({ entry, onDone }: { entry: CertEntry; onDone: () => Promise<void> }) {
   const t = useT()
   const toast = useToast()
+  const system = useSystem()
   const [password, setPassword] = useState('')
   const [confirm, setConfirm] = useState('')
   const [keyPassword, setKeyPassword] = useState('')
@@ -564,6 +607,29 @@ function StepPfx({ entry, onDone }: { entry: CertEntry; onDone: () => Promise<vo
                 autoComplete="new-password"
               />
             </Field>
+          </div>
+
+          {/* Sans cette proposition, le mot de passe sera court, reutilise, et
+              note quelque part. Il est affiche et copie dans la foulee : on ne
+              propose pas un secret qu'on ne peut pas relire. */}
+          <div className="-mt-2 flex items-center gap-2">
+            <Button
+              size="sm"
+              variant="ghost"
+              disabled={noPass}
+              icon={<Sparkles className="size-3.5" />}
+              onClick={() => {
+                const generated = suggestPassword()
+                setPassword(generated)
+                setConfirm(generated)
+                setShow(true)
+                system.copy(generated)
+                toast('success', t('detail.suggested'))
+              }}
+            >
+              {t('detail.suggest')}
+            </Button>
+            <Hint text={t('detail.suggestHelp')} label={t('detail.suggest')} />
           </div>
 
           <details className="group">

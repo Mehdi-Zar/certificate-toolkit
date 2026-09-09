@@ -21,8 +21,9 @@ import {
   TriangleAlert,
   X,
 } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
+import { trapFocus } from '../lib/focus-trap.ts'
 import type { Translate } from '../../shared/i18n/index.ts'
 import { api, unwrap } from '../lib/api.ts'
 import { useApp, useT } from '../lib/store.tsx'
@@ -77,8 +78,18 @@ export function Onboarding({
     return () => window.removeEventListener('keydown', onKey)
   })
 
+  // Sans piege a focus, la premiere tabulation sortait de l'assistant vers le
+  // menu cache sous le voile : modal pour la souris seulement.
+  const dialog = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    if (!dialog.current) return
+    return trapFocus(dialog.current)
+  }, [])
+
   return (
     <div
+      ref={dialog}
+      tabIndex={-1}
       className="fixed inset-0 z-50 grid place-items-center bg-black/45 p-6 backdrop-blur-[2px]"
       role="dialog"
       aria-modal="true"
