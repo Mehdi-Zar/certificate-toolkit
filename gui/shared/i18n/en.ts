@@ -744,7 +744,7 @@ export const en: Record<MessageKey, string> = {
   'nav.step2': 'Waiting on the authority',
   'nav.step3': 'Ready to assemble',
   'nav.step4': 'Certificates ready',
-  'nav.all': 'See everything',
+  'nav.dashboard': 'Dashboard',
 
   // -------------------------------------------------------------------------
   // Workspace

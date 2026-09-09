@@ -1,8 +1,8 @@
 import {
   AlertTriangle,
   FilePlus2,
+  LayoutDashboard,
   LifeBuoy,
-  List,
   Package,
   Send,
   Monitor,
@@ -97,7 +97,17 @@ function Sidebar({
       </div>
 
       <nav className="flex flex-col gap-0.5 px-3">
-        <p className="mb-1.5 px-2.5 text-[10.5px] font-semibold uppercase tracking-[0.08em] text-subtle">
+        {/* Le tableau de bord est l'accueil : il passe devant le parcours. */}
+        <NavItem
+          icon={<LayoutDashboard className="size-4" />}
+          active={onList && filter === 'all'}
+          onClick={() => navigate({ name: 'list' })}
+          badge={entries.length > 0 ? entries.length : undefined}
+        >
+          {t('nav.dashboard')}
+        </NavItem>
+
+        <p className="mb-1.5 mt-3 px-2.5 text-[10.5px] font-semibold uppercase tracking-[0.08em] text-subtle">
           {t('nav.journey')}
         </p>
 
@@ -136,17 +146,6 @@ function Sidebar({
         >
           {t('nav.step4')}
         </Step>
-
-        <div className="mt-1.5 border-t border-line pt-1.5">
-          <NavItem
-            icon={<List className="size-4" />}
-            active={onList && filter === 'all'}
-            onClick={() => navigate({ name: 'list' })}
-            badge={entries.length > 0 ? entries.length : undefined}
-          >
-            {t('nav.all')}
-          </NavItem>
-        </div>
       </nav>
 
       {/* Le parcours occupe le haut ; ce qui suit ne fait pas partie des

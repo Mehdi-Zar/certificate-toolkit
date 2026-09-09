@@ -66,7 +66,8 @@ export function CertificatesPage({
   return (
     <>
       <PageHeader
-        title={t('list.title')}
+        // Le titre suit le menu : accueil, ou l'etape du parcours retenue.
+        title={filter === 'all' ? t('nav.dashboard') : t(statusLabelKey(filter))}
         actions={
           <>
             <Button

@@ -753,7 +753,7 @@ export const fr = {
   'nav.step2': 'En attente de l’autorité',
   'nav.step3': 'À assembler',
   'nav.step4': 'Certificats prêts',
-  'nav.all': 'Tout voir',
+  'nav.dashboard': 'Tableau de bord',
 
   // -------------------------------------------------------------------------
   // Espace de travail
