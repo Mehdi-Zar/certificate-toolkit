@@ -747,6 +747,14 @@ export const fr = {
   'ph.businessCategory': 'Private Organization',
   'ph.dc': 'exemple',
 
+  // Le parcours, tel qu'il apparait dans la barre laterale.
+  'nav.journey': 'Le parcours',
+  'nav.step1': 'Créer une demande',
+  'nav.step2': 'En attente de l’autorité',
+  'nav.step3': 'À assembler',
+  'nav.step4': 'Certificats prêts',
+  'nav.all': 'Tout voir',
+
   // -------------------------------------------------------------------------
   // Espace de travail
   // -------------------------------------------------------------------------

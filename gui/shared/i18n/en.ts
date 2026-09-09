@@ -738,6 +738,14 @@ export const en: Record<MessageKey, string> = {
   'ph.businessCategory': 'Private Organization',
   'ph.dc': 'example',
 
+  // The journey, as it appears in the sidebar.
+  'nav.journey': 'The journey',
+  'nav.step1': 'Create a request',
+  'nav.step2': 'Waiting on the authority',
+  'nav.step3': 'Ready to assemble',
+  'nav.step4': 'Certificates ready',
+  'nav.all': 'See everything',
+
   // -------------------------------------------------------------------------
   // Workspace
   // -------------------------------------------------------------------------

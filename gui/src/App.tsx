@@ -2,6 +2,9 @@ import {
   AlertTriangle,
   FilePlus2,
   LifeBuoy,
+  List,
+  Package,
+  Send,
   Monitor,
   Moon,
   ShieldCheck,
@@ -13,6 +16,7 @@ import type { ReactNode } from 'react'
 import { Onboarding } from './components/Onboarding.tsx'
 import { cx } from './components/ui.tsx'
 import { LANGUAGES, type Lang } from '../shared/i18n/index.ts'
+import type { EntryStatus } from '../shared/types.ts'
 import { useApp, useT, useTheme, type Theme } from './lib/store.tsx'
 import { CertificatesPage } from './pages/CertificatesPage.tsx'
 import { DetailPage } from './pages/DetailPage.tsx'
@@ -20,10 +24,13 @@ import { NewRequestPage } from './pages/NewRequestPage.tsx'
 import { SettingsPage } from './pages/SettingsPage.tsx'
 
 export type Route =
-  | { name: 'list' }
+  | { name: 'list'; filter?: ListFilter }
   | { name: 'new' }
   | { name: 'detail'; fqdn: string }
   | { name: 'settings' }
+
+/** Ce que la liste affiche : tout, ou un seul etat du parcours. */
+export type ListFilter = 'all' | EntryStatus
 
 export default function App() {
   const [route, navigate] = useState<Route>({ name: 'list' })
@@ -46,7 +53,9 @@ export default function App() {
         {probe && !probe.available && !loading && <OpensslWarning onFix={() => navigate({ name: 'settings' })} />}
 
         <div key={routeKey(route)} className="animate-in">
-          {route.name === 'list' && <CertificatesPage navigate={navigate} />}
+          {route.name === 'list' && (
+            <CertificatesPage navigate={navigate} filter={route.filter ?? 'all'} />
+          )}
           {route.name === 'new' && <NewRequestPage navigate={navigate} />}
           {route.name === 'detail' && <DetailPage fqdn={route.fqdn} navigate={navigate} />}
           {route.name === 'settings' && <SettingsPage />}
@@ -71,9 +80,9 @@ function Sidebar({
 }) {
   const { entries } = useApp()
   const t = useT()
-  const actionable = entries.filter(
-    (e) => e.status === 'ready-to-assemble' || e.status === 'expiring' || e.status === 'expired',
-  ).length
+  const count = (s: EntryStatus) => entries.filter((e) => e.status === s).length
+  const onList = route.name === 'list' || route.name === 'detail'
+  const filter = route.name === 'list' ? (route.filter ?? 'all') : 'all'
 
   return (
     <aside className="flex w-60 shrink-0 flex-col border-r border-line bg-sunken">
@@ -88,21 +97,56 @@ function Sidebar({
       </div>
 
       <nav className="flex flex-col gap-0.5 px-3">
-        <NavItem
-          icon={<ShieldCheck className="size-4" />}
-          active={route.name === 'list' || route.name === 'detail'}
-          onClick={() => navigate({ name: 'list' })}
-          badge={actionable > 0 ? actionable : undefined}
-        >
-          {t('nav.certificates')}
-        </NavItem>
-        <NavItem
+        <p className="mb-1.5 px-2.5 text-[10.5px] font-semibold uppercase tracking-[0.08em] text-subtle">
+          {t('nav.journey')}
+        </p>
+
+        <Step
+          n={1}
           icon={<FilePlus2 className="size-4" />}
           active={route.name === 'new'}
           onClick={() => navigate({ name: 'new' })}
         >
-          {t('nav.newRequest')}
-        </NavItem>
+          {t('nav.step1')}
+        </Step>
+        <Step
+          n={2}
+          icon={<Send className="size-4" />}
+          active={onList && filter === 'awaiting-pki'}
+          onClick={() => navigate({ name: 'list', filter: 'awaiting-pki' })}
+          count={count('awaiting-pki')}
+        >
+          {t('nav.step2')}
+        </Step>
+        <Step
+          n={3}
+          icon={<Package className="size-4" />}
+          active={onList && filter === 'ready-to-assemble'}
+          onClick={() => navigate({ name: 'list', filter: 'ready-to-assemble' })}
+          count={count('ready-to-assemble')}
+          urgent
+        >
+          {t('nav.step3')}
+        </Step>
+        <Step
+          icon={<ShieldCheck className="size-4" />}
+          active={onList && filter === 'issued'}
+          onClick={() => navigate({ name: 'list', filter: 'issued' })}
+          count={count('issued') + count('expiring') + count('expired')}
+        >
+          {t('nav.step4')}
+        </Step>
+
+        <div className="mt-1.5 border-t border-line pt-1.5">
+          <NavItem
+            icon={<List className="size-4" />}
+            active={onList && filter === 'all'}
+            onClick={() => navigate({ name: 'list' })}
+            badge={entries.length > 0 ? entries.length : undefined}
+          >
+            {t('nav.all')}
+          </NavItem>
+        </div>
       </nav>
 
       {/* Le parcours occupe le haut ; ce qui suit ne fait pas partie des
@@ -129,6 +173,54 @@ function Sidebar({
         <OpensslStatus />
       </div>
     </aside>
+  )
+}
+
+function Step({
+  n,
+  icon,
+  children,
+  active,
+  onClick,
+  count = 0,
+  urgent,
+}: {
+  n?: number
+  icon: ReactNode
+  children: ReactNode
+  active: boolean
+  onClick: () => void
+  count?: number
+  urgent?: boolean
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className={cx(
+        'flex h-9 items-center gap-2 rounded-lg pl-1.5 pr-2.5 text-[13px] font-medium transition-colors',
+        active ? 'bg-accent-soft text-accent' : 'text-muted hover:bg-inset hover:text-ink',
+      )}
+    >
+      <span
+        className={cx(
+          'grid size-5 shrink-0 place-items-center rounded text-[10px] font-semibold',
+          n ? (active ? 'bg-accent text-accent-fg' : 'bg-inset text-subtle') : 'text-subtle',
+        )}
+      >
+        {n ?? icon}
+      </span>
+      <span className="min-w-0 flex-1 truncate text-left">{children}</span>
+      {count > 0 && (
+        <span
+          className={cx(
+            'grid min-w-5 shrink-0 place-items-center rounded-full px-1.5 text-[11px] font-semibold',
+            urgent ? 'bg-accent text-accent-fg' : 'bg-inset text-muted',
+          )}
+        >
+          {count}
+        </span>
+      )}
+    </button>
   )
 }
 
