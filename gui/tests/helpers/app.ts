@@ -28,6 +28,8 @@ export interface LaunchOptions {
   /** Faux pour voir l'assistant de demarrage. */
   onboarded?: boolean
   advancedByDefault?: boolean
+  /** Verification des versions. Faux par defaut, comme dans l'application. */
+  checkUpdates?: boolean
   /** Valeurs par defaut du sujet, vides sauf indication contraire. */
   defaults?: Partial<Record<'country' | 'state' | 'locality' | 'org' | 'ou' | 'email', string>>
 }
@@ -50,6 +52,7 @@ export async function launchApp(opts: LaunchOptions = {}): Promise<Launched> {
         language: opts.language ?? 'fr',
         advancedByDefault: opts.advancedByDefault ?? false,
         onboarded: opts.onboarded ?? true,
+        checkUpdates: opts.checkUpdates ?? false,
         defaults: {
           country: '', state: '', locality: '', org: '', ou: '', email: '',
           ...opts.defaults,

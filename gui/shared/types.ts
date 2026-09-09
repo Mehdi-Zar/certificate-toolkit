@@ -21,6 +21,22 @@ export interface Settings {
   advancedByDefault: boolean
   /** Faux tant que l'assistant de demarrage n'a pas ete parcouru. */
   onboarded: boolean
+  /**
+   * Verification des versions au demarrage. Faux par defaut, et c'est un
+   * choix : l'application ne contacte rien sans qu'on le lui demande, et
+   * beaucoup de postes qui l'utilisent n'ont de toute facon pas de sortie.
+   */
+  checkUpdates: boolean
+}
+
+/** Ce que la verification a trouve. Null quand rien de neuf, ou rien du tout. */
+export interface UpdateInfo {
+  /** Version publiee, telle qu'elle est etiquetee. */
+  latest: string
+  /** Version en cours d'execution. */
+  current: string
+  /** Page ou la telecharger. */
+  url: string
 }
 
 export interface SubjectDefaults {

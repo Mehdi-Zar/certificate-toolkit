@@ -51,6 +51,9 @@ export const fr = {
     'La racine de travail ne contient encore aucun dossier de demande. Commencez par générer une CSR.',
   'list.noResultTitle': 'Aucun résultat',
   'list.noResultDesc': 'Aucun dossier ne correspond à ce filtre.',
+  'update.available': 'Version {latest} disponible (vous avez la {current}).',
+  'update.open': 'Voir la version',
+  'update.dismiss': 'Plus tard',
   'list.sort': 'Trier',
   'list.sortStage': 'Par étape',
   'list.sortRecent': 'Plus récents',
@@ -603,6 +606,12 @@ export const fr = {
   'settings.subjectDefaults': 'Valeurs par défaut du sujet',
   'settings.subjectDefaultsHelp':
     'Pré-remplissage des nouvelles demandes. Chaque demande reste modifiable individuellement.',
+  'settings.updates': 'Vérification des versions',
+  'settings.updatesLabel': 'Vérifier au démarrage s’il existe une version plus récente',
+  'settings.updatesHint':
+    'Désactivé par défaut. Rien n’est contacté tant que vous ne cochez pas cette case.',
+  'settings.updatesHelp':
+    'Une seule requête au démarrage, vers la page des versions du projet, pour lire un numéro. Aucun identifiant n’est transmis, rien n’est téléchargé ni installé : si une version plus récente existe, un bandeau vous propose un lien, et vous décidez.',
   'settings.log': 'Journal',
   'settings.logBody':
     'Quand une commande échoue, la raison est écrite ici. Le fichier ne contient jamais de clé privée, de certificat ni de mot de passe : seulement la commande lancée, son code de retour et son message d’erreur.',
@@ -611,7 +620,7 @@ export const fr = {
   'settings.logOpen': 'Ouvrir le journal',
   'settings.privacy': 'Confidentialité',
   'settings.privacy1':
-    'Les clés privées, les CSR et les PFX restent dans la racine de travail. Aucune donnée ne sort de ce poste, l’application n’émet aucune requête réseau.',
+    'Les clés privées, les CSR et les PFX restent dans la racine de travail. Aucune donnée ne sort de ce poste. L’application n’émet aucune requête réseau, sauf si vous activez la vérification des versions ci-dessus, qui se limite alors à lire un numéro de version.',
   'settings.privacy2':
     'Les mots de passe ne sont jamais enregistrés, ni ici, ni dans un fichier de session. Ils ne vivent que le temps de l’assemblage d’un PFX, et sont transmis à openssl par son environnement plutôt que par sa ligne de commande.',
 
@@ -683,6 +692,7 @@ export const fr = {
     'Aucun certificat fourni ne correspond à la clé privée.\nLa PKI a peut-être signé une autre CSR, ou la clé a été régénérée depuis l’envoi.',
   'err.emptyPassword':
     'Mot de passe vide. Cochez « PFX sans mot de passe » si c’est voulu.',
+  'err.urlRefused': 'Adresse refusée : {url}',
   'err.rsaBits': 'Taille de clé RSA invalide : {bits} (2048, 3072 ou 4096).',
 
   // -------------------------------------------------------------------------

@@ -30,12 +30,38 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
 ### Ajouté
 
-- **Suite de bout en bout** : 22 tests qui pilotent l'application réelle, du
+- **L'espace de travail est surveillé.** La réponse de l'autorité déposée depuis
+  l'explorateur apparaît sans qu'il faille quitter l'écran et y revenir. Deux
+  filets : une veille sur le dossier, et le retour du focus sur la fenêtre.
+- **Proposer un mot de passe de PFX**, tiré au hasard sûr, sur un alphabet sans
+  caractères qui se confondent, rempli dans les deux champs, affiché et copié.
+- **Ranger un dossier** le sort de la liste sans rien détruire : il est déplacé
+  sous `.archive`. Il n'y a délibérément pas de suppression.
+- **Un journal des échecs**, ouvrable depuis les réglages. Il contient la
+  commande et son erreur, jamais de clé privée, de certificat ni de mot de
+  passe, et il ne consigne que les échecs.
+- **Vérification des versions**, décochée par défaut. Activée, elle lit un
+  numéro de version au démarrage et propose un lien. Rien n'est téléchargé.
+- **Avertissement sur la clé privée** : elle ne peut pas être régénérée, et le
+  certificat signé ne vaut rien sans elle.
+- **Tri par date** dans la liste, l'ordre par étape restant le défaut.
+- **100 tests** : 67 tests d'unité sur le moteur et les catalogues, qui tournent
+  en une seconde et demie, et 33 tests qui pilotent l'application réelle, du
   premier écran jusqu'au PFX ouvert avec son mot de passe. L'assemblage est
-  vérifié contre une autorité de certification créée pour la durée du test, ce
-  qui rend la suite autonome. `npm test`.
-- **[Améliorations identifiées](docs/ameliorations.md)** : onze propositions
-  classées, avec ce qu'elles coûtent et ce qu'elles apportent.
+  vérifié contre une autorité de certification créée pour la durée du test, et
+  un test de fumée lance l'exécutable construit.
+- **Lint et intégration continue.** ESLint avec deux règles propres au projet :
+  aucun message affiché en dur dans le processus principal, aucun mot de passe
+  en argument de commande. Un workflow GitHub Actions lance l'ensemble à chaque
+  poussée.
+- **[Améliorations](docs/ameliorations.md)** : ce qui a été réparé, et pourquoi
+  c'était un problème.
+
+### Modifié
+
+- **L'assistant de démarrage retient le focus** et masque ce qui est derrière
+  aux lecteurs d'écran. Il était jusqu'ici modal pour la souris seulement.
+- Les messages d'erreur sont rattachés à leur champ, donc annoncés.
 
 ## [1.0.0] 2026-09-08
 

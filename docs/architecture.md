@@ -90,7 +90,12 @@ et 3.1 ne connaît ni ML-DSA ni SHA-3.
 ouverture de fenêtre sont refusées ; les liens externes partent dans le
 navigateur du système.
 
-L'application n'émet aucune requête réseau, y compris pour les polices.
+L'application n'émet aucune requête réseau, y compris pour les polices. La
+seule exception possible est la vérification des versions, désactivée par
+défaut : quand elle est activée, le processus principal lit un numéro de
+version sur la page des versions du projet, une fois au démarrage. Le rendu,
+lui, ne peut rien émettre : la CSP l'interdit et la requête part du processus
+principal.
 
 ## Ce qui n'est pas un bug
 

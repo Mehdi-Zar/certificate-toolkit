@@ -147,4 +147,9 @@ Installez-le, ou passez par l'application.
 Ouvrez une issue sur le dépôt en précisant la version, ce que vous avez fait,
 ce qui était attendu et ce qui s'est produit.
 
+Joignez les dernières lignes du journal. **Réglages** puis **Ouvrir le journal**
+l'affiche : il contient la commande qui a échoué et son message d'erreur, jamais
+de clé privée, de certificat ni de mot de passe. Tant que rien n'a échoué, il
+est vide, et c'est en soi une information.
+
 **Ne joignez jamais de clé privée ni de PFX**, même expiré.

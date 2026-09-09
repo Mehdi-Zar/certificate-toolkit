@@ -34,6 +34,7 @@ export function defaults(): Settings {
     language: detectLang(app.getLocale() || 'en'),
     advancedByDefault: false,
     onboarded: false,
+    checkUpdates: false,
     defaults: {
       country: process.env.CERT_COUNTRY || '',
       state: process.env.CERT_STATE || '',
@@ -62,6 +63,7 @@ export async function loadSettings(): Promise<Settings> {
       language: isLang(saved.language) ? saved.language : base.language,
       advancedByDefault: saved.advancedByDefault ?? base.advancedByDefault,
       onboarded: saved.onboarded ?? base.onboarded,
+      checkUpdates: saved.checkUpdates ?? base.checkUpdates,
       defaults: { ...base.defaults, ...(saved.defaults ?? {}) },
     }
   } catch {
@@ -77,6 +79,7 @@ export async function saveSettings(next: Settings): Promise<Settings> {
     language: isLang(next.language) ? next.language : defaults().language,
     advancedByDefault: next.advancedByDefault ?? false,
     onboarded: next.onboarded ?? false,
+    checkUpdates: next.checkUpdates ?? false,
     defaults: { ...defaults().defaults, ...next.defaults },
   }
   const file = FILE()

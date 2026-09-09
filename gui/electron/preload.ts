@@ -15,6 +15,7 @@ import type {
   PfxResult,
   Reply,
   Settings,
+  UpdateInfo,
 } from '../shared/types.ts'
 
 const call = <T>(channel: string, ...args: unknown[]): Promise<Reply<T>> =>
@@ -44,6 +45,10 @@ const api = {
   pfx: {
     make: (req: PfxRequest) => call<PfxResult>('pfx:make', req),
   },
+  update: {
+    /** Null quand rien de neuf, ou quand la verification est desactivee. */
+    check: () => call<UpdateInfo | null>('update:check'),
+  },
   entry: {
     /** Deplace le dossier sous .archive/ et renvoie sa nouvelle place. */
     archive: (fqdn: string) => call<string>('entry:archive', fqdn),
@@ -55,6 +60,8 @@ const api = {
     confirm: (title: string, body: string, ok: string) =>
       call<boolean>('dialog:confirm', title, body, ok),
     reveal: (path: string) => call<boolean>('shell:reveal', path),
+    /** Ouvre un lien du projet dans le navigateur. Toute autre adresse est refusee. */
+    openExternal: (url: string) => call<boolean>('shell:openExternal', url),
     openDir: (path: string) => call<boolean>('shell:openDir', path),
     copy: (text: string) => call<boolean>('clipboard:write', text),
     /** Ouvre le journal de l'application, et renvoie son chemin. */

@@ -1,5 +1,6 @@
 import {
   AlertTriangle,
+  Download,
   FilePlus2,
   LayoutDashboard,
   LifeBuoy,
@@ -11,12 +12,13 @@ import {
   Settings as SettingsIcon,
   Sun,
 } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import type { ReactNode } from 'react'
 import { Onboarding } from './components/Onboarding.tsx'
 import { cx } from './components/ui.tsx'
 import { LANGUAGES, type Lang } from '../shared/i18n/index.ts'
-import type { EntryStatus } from '../shared/types.ts'
+import type { EntryStatus, UpdateInfo } from '../shared/types.ts'
+import { api } from './lib/api.ts'
 import { useApp, useT, useTheme, type Theme } from './lib/store.tsx'
 import { CertificatesPage } from './pages/CertificatesPage.tsx'
 import { DetailPage } from './pages/DetailPage.tsx'
@@ -57,6 +59,7 @@ export default function App() {
 
       <main className="min-w-0 flex-1 overflow-y-auto">
         {probe && !probe.available && !loading && <OpensslWarning onFix={() => navigate({ name: 'settings' })} />}
+        <UpdateBanner />
 
         <div key={routeKey(route)} className="animate-in">
           {route.name === 'list' && (
@@ -357,6 +360,56 @@ function OpensslStatus() {
           {probe.version.split(/\s+/)[1] ?? probe.version}
         </p>
       )}
+    </div>
+  )
+}
+
+/**
+ * Bandeau de mise a jour.
+ *
+ * Il n'apparait que si la verification a ete activee dans les reglages, et
+ * seulement quand une version plus recente existe. Il propose un lien : rien
+ * ne se telecharge ni ne s'installe tout seul. « Plus tard » le masque pour la
+ * session, sans rien enregistrer : la prochaine ouverture reposera la question,
+ * ce qui est le comportement voulu pour une correction importante.
+ */
+function UpdateBanner() {
+  const t = useT()
+  const { settings } = useApp()
+  const [info, setInfo] = useState<UpdateInfo | null>(null)
+  const [hidden, setHidden] = useState(false)
+
+  useEffect(() => {
+    if (!settings?.checkUpdates) return
+    let alive = true
+    void api.update.check().then((r) => {
+      if (alive && r.ok) setInfo(r.data)
+    })
+    return () => {
+      alive = false
+    }
+  }, [settings?.checkUpdates])
+
+  if (!info || hidden) return null
+
+  return (
+    <div className="flex items-start gap-3 border-b border-accent/25 bg-accent-soft px-8 py-3.5">
+      <Download className="mt-0.5 size-4 shrink-0 text-accent" />
+      <p className="min-w-0 flex-1 text-[13px] font-medium text-accent">
+        {t('update.available', { latest: info.latest, current: info.current })}
+      </p>
+      <button
+        onClick={() => void api.system.openExternal(info.url)}
+        className="shrink-0 rounded-md px-2.5 py-1 text-[12px] font-medium text-accent underline underline-offset-2 hover:bg-accent/10"
+      >
+        {t('update.open')}
+      </button>
+      <button
+        onClick={() => setHidden(true)}
+        className="shrink-0 rounded-md px-2.5 py-1 text-[12px] text-muted hover:text-ink"
+      >
+        {t('update.dismiss')}
+      </button>
     </div>
   )
 }

@@ -17,6 +17,9 @@ sur l'OpenSSL du `PATH`.
 | Commande | Effet |
 |---|---|
 | `npm run dev` | Application en développement, rechargement à chaud |
+| `npm run lint` | ESLint, typage, contrôle de documentation |
+| `npm test` | `lint`, construction, puis tous les tests |
+| `npm run test:e2e` | Les tests seuls, sans reconstruire |
 | `npm run typecheck` | Vérification TypeScript seule |
 | `npm run build` | Typecheck puis bundles de production |
 | `npm run bundle:openssl` | Prépare la copie embarquée d'OpenSSL |
@@ -24,6 +27,10 @@ sur l'OpenSSL du `PATH`.
 | `npm run dist` | Installateurs |
 
 `pack` et `dist` lancent `bundle:openssl` puis `build` automatiquement.
+
+`npm test` reconstruit avant de tester : les tests pilotent les bundles, pas
+les sources. Un changement non reconstruit se traduit sinon par un échec qui
+n'a rien à voir avec ce qu'on vient d'écrire.
 
 ## Pile
 
@@ -78,17 +85,41 @@ openssl.
 
 ## Tests
 
-Deux suites existent, 99 vérifications, mais ne sont pas encore versionnées :
-l'une dépend de données réelles, exclues du dépôt. Voir
-[Dette et risques](../docs/dette.md).
+100 tests dans `tests/`, lancés par Playwright, en deux familles.
 
-Elles s'exécutent sans transpilation :
+**`tests/unite/`** appelle le moteur et les catalogues directement, sans rien
+ouvrir. En parallèle, une seconde et demie. C'est là que vivent les vingt règles
+de cohérence, la validation des noms de dossier et les invariants des
+catalogues.
+
+**`tests/e2e/` et `tests/paquet/`** lancent Electron pour de vrai. Un seul à la
+fois : l'application impose un verrou d'instance unique. Chaque test reçoit son
+propre dossier applicatif et son propre espace de travail.
+
+Les unités passent en premier. Quand une règle de cohérence est cassée, on veut
+le savoir avant d'attendre une minute et demie de parcours complets.
 
 ```bash
-node --experimental-strip-types --no-warnings verify.ts
+npm test                              # tout
+npx playwright test --project=unite   # les unités seules
+npx playwright test tests/e2e/03-boucle-complete.spec.ts
 ```
 
-Le code évite les propriétés de paramètre TypeScript pour cette raison.
+Deux choix qui portent le reste :
+
+**La vérification passe par l'openssl du poste**, pas par celui qu'embarque
+l'application. Un oracle qui partage le binaire testé ne prouverait pas
+grand-chose.
+
+**L'assemblage est vérifié contre une autorité de certification jetable**
+(`tests/helpers/ca.ts`), racine plus intermédiaire, créée pour la durée d'un
+test. Sans elle il faudrait un vrai retour de PKI, donc des données qu'on ne
+peut pas versionner.
+
+`tests/paquet/smoke.spec.ts` lance l'exécutable construit, et s'ignore tant
+qu'aucun paquet n'existe. Il est là parce que ce qui marche depuis les sources
+ne dit rien de ce qui est livré : le défaut le plus grave de ce projet ne se
+manifestait qu'une fois OpenSSL copié dans le paquet.
 
 ## Ajouter un modèle
 
@@ -102,6 +133,7 @@ Les icônes viennent de `lucide-react`, résolues par nom dans `NewRequestPage`.
 
 `contextIsolation` et `sandbox` actifs, pas de `nodeIntegration`, pas de
 `webviewTag`, Content-Security-Policy stricte, navigation refusée, aucune
-requête réseau.
+requête réseau depuis le rendu. La vérification des versions, si elle est
+activée dans les réglages, part du processus principal.
 
 Voir [Sécurité](../docs/securite.md).

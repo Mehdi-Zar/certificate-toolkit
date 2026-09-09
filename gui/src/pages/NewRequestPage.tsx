@@ -38,7 +38,7 @@ import {
   EKU_CATALOG,
   KEY_USAGE_CATALOG,
   TEMPLATES,
-  extensionsFromTemplate,
+  blankRequest,
   getTemplate,
   type Template,
   type TemplateCategory,
@@ -52,7 +52,6 @@ import type {
   KeyAlgorithm,
   KeyUsageBit,
   San,
-  Settings,
   Warning,
 } from '../../shared/types.ts'
 import type { Route } from '../App.tsx'
@@ -126,44 +125,6 @@ const ICONS: Record<string, ReactNode> = {
   SlidersHorizontal: <SlidersHorizontal className="size-4" />,
 }
 
-function blankRequest(template: Template, settings: Settings | null): CsrRequest {
-  return {
-    name: '',
-    templateId: template.id,
-    subject: {
-      commonName: '',
-      country: settings?.defaults.country ?? '',
-      state: settings?.defaults.state ?? '',
-      locality: settings?.defaults.locality ?? '',
-      org: settings?.defaults.org ?? '',
-      ous: settings?.defaults.ou ? [settings.defaults.ou] : [],
-      email: settings?.defaults.email ?? '',
-      serialNumber: '',
-      businessCategory: '',
-      domainComponents: [],
-      uid: '',
-      street: '',
-      postalCode: '',
-      title: '',
-      givenName: '',
-      surname: '',
-    },
-    sans: [],
-    key: {
-      algorithm: template.key.algorithm,
-      bits: template.key.bits,
-      curve: template.key.curve,
-      mldsaLevel: '65',
-      encrypt: false,
-      passphrase: '',
-    },
-    digest: template.digest,
-    extensions: extensionsFromTemplate(template),
-    attributes: { challengePassword: '', unstructuredName: '' },
-    stringMask: 'utf8only',
-    force: false,
-  }
-}
 
 // ---------------------------------------------------------------------------
 
@@ -272,7 +233,7 @@ function RequestForm({
   const toast = useToast()
   const template = getTemplate(templateId)
 
-  const [req, setReq] = useState<CsrRequest>(() => blankRequest(template, settings))
+  const [req, setReq] = useState<CsrRequest>(() => blankRequest(template, settings?.defaults))
   const [advanced, setAdvanced] = useState(settings?.advancedByDefault ?? false)
   const [nameTouched, setNameTouched] = useState(false)
   const [busy, setBusy] = useState(false)

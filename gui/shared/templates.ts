@@ -10,7 +10,14 @@
  * ne porte que les cles et la substance technique.
  */
 import type { MessageKey } from './i18n/index.ts'
-import type { Digest, Extensions, KeySpec, KeyUsageBit, SanType } from './types.ts'
+import type {
+  CsrRequest,
+  Digest,
+  Extensions,
+  KeySpec,
+  KeyUsageBit,
+  SanType,
+} from './types.ts'
 
 export type TemplateCategory = 'web' | 'identite' | 'signature' | 'infra' | 'autorite'
 
@@ -352,6 +359,58 @@ export const getTemplate = (id: string): Template =>
   TEMPLATES.find((t) => t.id === id) ?? TEMPLATES[TEMPLATES.length - 1]!
 
 /** Les extensions telles que le modele les prevoit, avant retouche manuelle. */
+/**
+ * Une demande vierge conforme a un modele.
+ *
+ * Elle vit ici plutot que dans l'ecran de creation : c'est la forme que le
+ * processus principal valide et rend en configuration openssl, et un test qui
+ * veut l'eprouver doit pouvoir la construire sans ouvrir de fenetre.
+ *
+ * defaults est le pre-remplissage venu des reglages. Tout le reste part vide :
+ * un champ pre-rempli qu'on n'a pas choisi finit dans le certificat.
+ */
+export function blankRequest(
+  template: Template,
+  defaults?: Partial<Record<'country' | 'state' | 'locality' | 'org' | 'ou' | 'email', string>>,
+): CsrRequest {
+  return {
+    name: '',
+    templateId: template.id,
+    subject: {
+      commonName: '',
+      country: defaults?.country ?? '',
+      state: defaults?.state ?? '',
+      locality: defaults?.locality ?? '',
+      org: defaults?.org ?? '',
+      ous: defaults?.ou ? [defaults.ou] : [],
+      email: defaults?.email ?? '',
+      serialNumber: '',
+      businessCategory: '',
+      domainComponents: [],
+      uid: '',
+      street: '',
+      postalCode: '',
+      title: '',
+      givenName: '',
+      surname: '',
+    },
+    sans: [],
+    key: {
+      algorithm: template.key.algorithm,
+      bits: template.key.bits,
+      curve: template.key.curve,
+      mldsaLevel: '65',
+      encrypt: false,
+      passphrase: '',
+    },
+    digest: template.digest,
+    extensions: extensionsFromTemplate(template),
+    attributes: { challengePassword: '', unstructuredName: '' },
+    stringMask: 'utf8only',
+    force: false,
+  }
+}
+
 export function extensionsFromTemplate(t: Template): Extensions {
   return {
     basicConstraints: { include: true, ca: t.ca, pathLen: t.pathLen, critical: t.ca },

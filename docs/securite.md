@@ -15,6 +15,12 @@ Tout le reste découle de là.
 **Rien ne sort du poste.** Aucune requête réseau, y compris pour les polices.
 C'est vous qui transmettez la demande à votre autorité.
 
+Une seule exception, et elle se coche : la vérification des versions, éteinte
+par défaut. Activée, elle lit un numéro de version au démarrage sur la page des
+versions du projet. Aucun identifiant n'est transmis, rien n'est téléchargé ni
+installé, et l'adresse que le processus principal accepte d'ouvrir est limitée
+à celles du projet. Voir [Réglages](reglages.md).
+
 **La clé privée ne quitte pas le dossier de travail.** Seule la demande, qui ne
 contient rien de secret, est destinée à être transmise.
 

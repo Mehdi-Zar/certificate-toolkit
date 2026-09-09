@@ -1,218 +1,214 @@
-# Améliorations identifiées
+# Améliorations
 
-Ce que l'outil gagnerait à faire, classé par ce que ça change pour la personne
-qui s'en sert. Rien ici n'est engagé : c'est une liste de propositions, chacune
-avec ce qu'elle coûte et ce qu'elle apporte.
+Onze améliorations ont été identifiées puis mises en place. Cette page dit ce
+qui a changé, et pourquoi c'était un problème, pour que personne n'ait à le
+redécouvrir.
 
 Distinction avec [Dette et risques](dette.md) : la dette décrit ce qui ne tient
-pas. Cette page décrit ce qui tient, mais pourrait tenir mieux.
+toujours pas. Cette page décrit ce qui a été réparé.
 
-Les constats viennent de la suite de bout en bout et d'une lecture du code, pas
-d'impressions. Quand un constat s'appuie sur un fichier précis, il est cité.
-
----
-
-## D'abord, ce qui a déjà été corrigé
-
-La suite de bout en bout a trouvé dix défauts réels, tous corrigés. Ils sont
-listés ici parce qu'ils disent où l'application était fragile, et donc où
-regarder ensuite.
-
-| Défaut | Effet réel |
-|---|---|
-| OpenSSL embarqué sans sa configuration | **L'application livrée ne savait pas produire une demande.** La vérification finale échouait. |
-| Une adresse IP saisie en nom alternatif était enregistrée en DNS | Certificat inutilisable pour l'adresse demandée |
-| Comparaison des SAN sur le mauvais libellé (`IP Address` contre `IPAddress`) | Toute IP demandée était rapportée absente du certificat signé |
-| Message d'erreur écrit en dur, sans accents, hors du catalogue | Français fautif, et texte resté français en session anglaise |
-| `id="root"` en double avec le point de montage | L'étiquette du champ « espace de travail » ne le désignait pas |
-| Bouton d'aide imbriqué dans le libellé | Le champ s'annonçait « Mot de passe du PFX Aide : Mot de passe du PFX » |
-| Message d'erreur non rattaché au champ | Une erreur affichée mais jamais annoncée par un lecteur d'écran |
-| « Créer une demande » sans effet depuis l'écran de confirmation | Impossible d'enchaîner deux demandes sans détour |
-| Bouton « Ouvrir le dossier » silencieux quand le dossier n'existait pas | Un clic sans effet ni explication |
-| « Francais » sans cédille | Le premier mot que lit un francophone |
-
-Ce que cette liste apprend : les défauts ne se voyaient pas à la lecture du
-code. Cinq d'entre eux ne se voient pas non plus à l'écran.
+Tous les constats venaient de la suite de tests ou d'une lecture du code, pas
+d'impressions. Chaque correction est couverte par un test.
 
 ---
 
 ## Expérience utilisateur
 
-### 1. Le dossier `Signed/` n'est pas surveillé
+### Le dossier `Signed/` est surveillé
 
-**Le constat.** `DetailPage` recharge à l'ouverture et rien d'autre
-(`gui/src/pages/DetailPage.tsx`, effet ligne 103). Aucune veille sur le
-système de fichiers dans tout le projet.
+**Ce qui n'allait pas.** La fiche d'une demande ne se relisait qu'à l'ouverture.
+Or tout le parcours repose sur un aller-retour hors de l'application : on envoie
+la demande à l'autorité, on attend, on dépose sa réponse dans `Signed/` depuis
+l'explorateur. Ce dépôt n'apparaissait qu'après avoir quitté la fiche et y être
+revenu.
 
-**Ce que ça donne.** Le parcours demande d'aller chercher un fichier ailleurs
-et de revenir. Quelqu'un qui laisse la fiche ouverte, dépose la réponse de
-l'autorité depuis l'explorateur, puis revient sur la fenêtre, ne voit rien
-changer. Il faut quitter la fiche et y revenir.
+**Ce qui a été fait.** Deux filets, parce qu'un seul ne suffit pas.
 
-C'est exactement la gêne déjà signalée sur la liste des certificats, au même
-endroit du parcours, sur un autre écran.
+`fs.watch` sur la racine de travail, en récursif là où le système le sait faire,
+regroupe les événements sur 400 ms : copier trois fichiers en produit une
+dizaine, et rafraîchir dix fois ferait clignoter la liste.
 
-**Remède.** Un `fs.watch` sur le dossier de travail côté processus principal,
-qui pousse un événement vers l'interface. À défaut, un rechargement quand la
-fenêtre reprend le focus, ce qui couvre le cas réel à peu de frais.
+Le retour du focus sur la fenêtre déclenche la même relecture. Le récursif
+n'existe pas sous Linux, un dossier sur un partage réseau ne remonte pas
+toujours ses événements, et une veille peut mourir sans le dire. Revenir sur la
+fenêtre après être allé chercher un fichier est précisément le geste qui suit un
+dépôt : ce filet couvre le cas réel même quand le premier ne voit rien.
 
-**Coût.** Faible dans la version « au retour du focus ». Moyen pour une vraie
-veille, qui demande de gérer les dossiers qui disparaissent et les écritures
-partielles.
+La relecture qui suit n'affiche pas d'indicateur de chargement. Elle n'a pas été
+demandée : elle ne doit pas se voir.
 
-### 2. Le mot de passe du PFX se saisit deux fois, sans aide
+### Un mot de passe peut être proposé
 
-**Le constat.** Deux champs, un bouton « Afficher », et rien d'autre
-(`gui/src/pages/DetailPage.tsx`). Aucune proposition de mot de passe, aucune
-indication de solidité.
+**Ce qui n'allait pas.** Deux champs, un bouton pour révéler, rien d'autre. Ce
+mot de passe protège une clé privée dans un fichier destiné à circuler, et la
+documentation demande de le transmettre séparément. Sans aide, il est court,
+réutilisé, et noté quelque part.
 
-**Ce que ça donne.** Ce mot de passe protège une clé privée dans un fichier
-destiné à circuler. La documentation demande de le transmettre séparément.
-Sans aide, il sera court, réutilisé, et noté quelque part.
+**Ce qui a été fait.** Un bouton « Proposer » tire un mot de passe, remplit les
+deux champs, l'affiche et le copie. Le geste devient : cliquer, coller dans un
+gestionnaire de mots de passe, continuer.
 
-**Remède.** Un bouton « proposer un mot de passe » qui tire une chaîne solide
-avec `crypto.randomUUID` ou un générateur de mots, la remplit dans les deux
-champs et la copie. Le geste devient : cliquer, coller dans le gestionnaire de
-mots de passe, continuer.
+Deux détails qui décident de tout. Le tirage vient de `crypto.getRandomValues`
+et non de `Math.random`, et le modulo est rejeté plutôt que replié : replier un
+octet sur un alphabet qui ne divise pas 256 rendrait les premières lettres plus
+probables que les dernières. L'alphabet exclut ce qui se confond à la relecture,
+`0` et `O`, `1`, `l` et `I`, ainsi que la ponctuation qu'un shell
+interpréterait : ce mot de passe sera dicté et retapé.
 
-**Coût.** Faible. Une trentaine de lignes, plus deux clés de traduction.
+### Un dossier peut être rangé
 
-**Attention.** Ne pas écrire ce mot de passe dans un fichier de l'espace de
-travail, ce qui recréerait le problème que le `.gitignore` a déjà connu.
+**Ce qui n'allait pas.** Rien ne se supprimait ni ne s'archivait depuis
+l'application. Un essai raté, une faute de frappe dans le nom, une demande
+abandonnée : le dossier restait pour toujours, et il fallait passer par
+l'explorateur.
 
-### 3. Rien ne se supprime depuis l'application
+**Ce qui a été fait.** « Ranger » déplace le dossier vers `.archive`, dans votre
+espace de travail. Le scan l'ignore, puisqu'il saute déjà tout ce qui commence
+par un point. Un horodatage évite d'écraser une archive du même nom, ce qui
+arrive dès qu'on refait une demande sous le même nom.
 
-**Le constat.** Aucune action de suppression ni d'archivage nulle part.
+**Ce qui n'a délibérément pas été fait : supprimer.** Effacer une clé privée est
+irréversible et peut rendre inutilisable un certificat déjà déployé ailleurs. Ce
+que vous rangez par erreur se récupère à la main, avec l'explorateur.
 
-**Ce que ça donne.** Un essai raté, une faute de frappe dans le nom, une
-demande abandonnée : le dossier reste. Au bout de quelques mois le tableau de
-bord mélange le réel et les brouillons, et il faut passer par l'explorateur.
+La confirmation est une boîte native : elle bloque réellement la fenêtre, elle
+est annoncée comme un dialogue, et Échap l'annule sans qu'on ait à le
+programmer.
 
-**Remède.** Une action « archiver », qui déplace le dossier dans un
-sous-dossier plutôt que de le détruire. Supprimer une clé privée est
-irréversible et peut casser un certificat déjà déployé : le déplacement donne
-le même confort sans le risque.
+### L'assistant retient le focus
 
-**Coût.** Faible. Le plus dur est le libellé, qui doit dire ce qui se passe
-sans faire peur.
+**Ce qui n'allait pas.** L'assistant de démarrage était modal pour la souris
+seulement. À la tabulation, on sortait vers le menu caché sous le voile, sans le
+voir. La première personne à découvrir l'outil sans souris perdait donc l'écran
+d'accueil dès la première tabulation.
 
-### 4. L'assistant ne retient pas le focus
+**Ce qui a été fait.** Le focus entre tout seul sur le premier élément utile,
+boucle entre le premier et le dernier, et revient à sa place à la fermeture. Ce
+qui est derrière est masqué aux lecteurs d'écran, qui sans cela continuent
+d'annoncer le menu et la liste.
 
-**Le constat.** `Onboarding.tsx` gère `role="dialog"` et la touche Échap, mais
-ne place pas le focus à l'ouverture et ne le retient pas.
+Un détail qui a coûté un aller-retour : masquer les enfants de `<body>` ne
+masquait rien. L'application est montée dans un unique `<div id="root">`, qui
+contient aussi le dialogue. Il faut remonter la chaîne des ancêtres et masquer
+les frères à chaque étage.
 
-**Ce que ça donne.** À la tabulation, on sort de l'assistant et on se retrouve
-dans le menu qui est derrière, sans le voir. Quelqu'un qui navigue au clavier
-perd l'écran d'accueil dès la première tabulation.
+### La clé privée est annoncée comme irremplaçable
 
-**Remède.** Placer le focus sur le titre à l'ouverture, boucler la tabulation
-entre le premier et le dernier élément, rendre le fond inerte avec
-`aria-hidden` ou l'attribut `inert`.
+**Ce qui n'allait pas.** L'écran de confirmation disait où était la clé et
+qu'elle ne devait pas circuler. Il ne disait pas qu'elle ne peut pas être
+régénérée.
 
-**Coût.** Faible, une trentaine de lignes bien connues.
+Un poste reformaté entre l'envoi de la demande et le retour de l'autorité, et le
+certificat signé ne sert plus à rien : sans sa clé, il n'y a pas de PFX
+possible. C'est une perte définitive, et rien ne prévenait.
 
-### 5. Rien ne rappelle de sauvegarder la clé privée
+**Ce qui a été fait.** Une phrase, à l'endroit et au moment où elle sert : copier
+le dossier ailleurs avant d'envoyer la demande.
 
-**Le constat.** L'écran de confirmation dit où est la clé et qu'elle ne doit
-pas circuler. Il ne dit pas qu'elle est irremplaçable.
+### La liste se trie par date
 
-**Ce que ça donne.** Un poste reformaté entre l'envoi de la demande et le
-retour de l'autorité, et le certificat signé ne sert plus à rien : sans sa clé,
-il n'y a pas de PFX possible. C'est une perte définitive, et rien ne prévient.
+**Ce qui n'allait pas.** L'ordre était toujours le même : ce qui demande une
+action d'abord, puis par nom. C'est le bon ordre pour cinq certificats. Pour
+cinquante, retrouver celui d'hier demande de le chercher.
 
-**Remède.** Une ligne à l'écran de confirmation, et une mention dans
-l'assistant : la clé ne peut pas être régénérée, une sauvegarde du dossier
-avant l'envoi évite de tout recommencer.
-
-**Coût.** Deux phrases. C'est l'amélioration au meilleur rapport de la liste.
-
-### 6. La liste ne dit pas ce qui a bougé depuis la dernière fois
-
-**Le constat.** Le tableau de bord trie par état puis par nom
-(`gui/electron/inventory.ts`, ligne 55). La date de création est lue mais ne
-sert pas au tri.
-
-**Ce que ça donne.** Avec cinq certificats, aucune importance. Avec cinquante,
-retrouver celui d'hier demande de le chercher, alors que la recherche existe
-déjà pour cela.
-
-**Remède.** Un tri par date au choix, ou simplement afficher la date sur
-chaque ligne. Le champ est déjà disponible.
-
-**Coût.** Faible.
+**Ce qui a été fait.** Un sélecteur ajoute un ordre par date, le plus récent en
+tête. L'ordre par étape reste le défaut, parce qu'il reste le bon la plupart du
+temps.
 
 ---
 
 ## Technique
 
-### 7. Aucune intégration continue
+### Il y a une intégration continue
 
-Déjà inscrit dans [Dette et risques](dette.md), mais le contexte a changé : il
-y a désormais une suite de tests qui tourne en cinquante secondes et qui a
-prouvé sa valeur en trouvant dix défauts. Sans automatisation, elle ne sera
-lancée que par celui qui y pense.
+Un workflow GitHub Actions lance à chaque poussée, sur Windows : le lint, le
+typage, le contrôle de documentation, la construction et les 100 tests. Les
+traces Playwright sont conservées en cas d'échec, ce qui est la seule façon de
+comprendre un échec qu'on ne reproduit pas en local.
 
-**Remède.** Un workflow qui enchaîne `tsc --noEmit`, `node scripts/check-docs.mjs`
-et `npm test`. Les tests pilotent Electron, ce qui demande un affichage virtuel
-sous Linux, ou un exécuteur Windows.
+Windows plutôt que Linux : l'application est testée en la lançant pour de vrai,
+et c'est la seule plateforme réellement livrée aujourd'hui.
 
-**Coût.** Faible à moyen selon l'exécuteur retenu.
+### Il y a un linter, avec deux règles maison
 
-### 8. Aucun linter
+ESLint, `typescript-eslint` et `react-hooks`. Ce qui compte, ce sont les deux
+règles propres au projet, chacune écrite après une infraction réelle :
 
-Seul le typage vérifie quelque chose. Les conventions du projet, elles, tiennent
-par la discipline : nommage, imports inutilisés, `console.log` oubliés.
+**Aucun message d'erreur affiché ne peut être une chaîne littérale dans le
+processus principal.** Le message montré quand aucun certificat ne correspond à
+la clé privée était écrit en dur, sans accents, hors du catalogue : il restait
+donc en français dans une session anglaise.
 
-Un import mort a d'ailleurs été trouvé à la main pendant ce travail
-(`Trash2` dans `DetailPage.tsx`), signalé par le compilateur seulement parce
-que le code qui l'utilisait a disparu en entier.
+**Aucun mot de passe ne peut être passé en argument à openssl.** Les arguments
+d'un processus sont visibles de tout le système. Le code passait déjà par
+l'environnement, mais une règle qui ne tient qu'à une convention finit par être
+oubliée.
 
-**Remède.** ESLint avec `typescript-eslint`, `react-hooks` et une poignée de
-règles, plus la règle maison qui compte : aucune chaîne de texte destinée à
-l'utilisateur hors du catalogue de traduction. Le message d'erreur écrit en dur
-serait tombé dessus.
+Les deux règles ont été vérifiées en les enfreignant volontairement. Une règle
+qui ne se déclenche jamais est pire qu'absente.
 
-**Coût.** Moyen. La configuration prend une heure ; la première passe sur le
-code existant peut en prendre plus.
+Le contrôle de documentation lit aussi les catalogues de traduction. Ce sont les
+seuls fichiers de code qu'un utilisateur lit vraiment, et un tiret cadratin y
+passait jusqu'ici sans rien déclencher.
 
-### 9. Rien ne trace ce qui s'est passé
+### Les échecs sont écrits dans un journal
 
-**Le constat.** Une seule ligne de journalisation dans tout le processus
-principal (`gui/electron/ipc.ts`, ligne 39), vers la console. Une application
-empaquetée n'a pas de console visible.
+**Ce qui n'allait pas.** Une seule ligne de journalisation dans tout le processus
+principal, vers la console. Une application empaquetée n'a pas de console
+visible : quand quelqu'un signalait une panne, il n'y avait rien à lui demander
+sinon une capture d'écran.
 
-**Ce que ça donne.** Quand quelqu'un signale que « ça ne marche pas », il n'y
-a rien à demander sinon une capture d'écran.
+**Ce qui a été fait.** `journal.log`, dans le dossier applicatif, ouvrable depuis
+les réglages où son chemin est affiché pour pouvoir le dicter.
 
-**Remède.** Un fichier de journal tournant dans le dossier applicatif, la
-commande openssl et son code de retour, jamais son entrée ni les mots de passe.
-Un bouton « ouvrir le journal » dans les réglages.
+Il contient la commande lancée, son code de retour et les dernières lignes
+d'erreur. Il ne contient jamais ce qui est envoyé sur l'entrée standard, donc ni
+clé privée ni certificat, et la valeur des options qui portent un secret est
+remplacée avant écriture, même si ces options ne sont jamais employées ainsi.
 
-**Attention.** Les mots de passe passent par l'environnement et jamais par la
-ligne de commande. Un journal naïf annulerait cette précaution.
+Seuls les échecs sont consignés. Un journal qui note chaque succès noie le seul
+événement qu'on vient y chercher. Le fichier tourne à 1 Mo.
 
-**Coût.** Faible.
+### Le moteur est couvert par des tests d'unité
 
-### 10. Les 99 vérifications du moteur restent hors du dépôt
+67 tests appellent directement les fonctions qui décident du contenu d'une
+demande, sans ouvrir de fenêtre. Ils tournent en une seconde et demie, en
+parallèle, et passent avant les tests d'application : quand une règle de
+cohérence est cassée, on veut le savoir avant d'attendre une minute et demie de
+parcours complets.
 
-Déjà dans [Dette et risques](dette.md). La partie assemblage est désormais
-couverte dans le dépôt par une autorité de certification créée à la volée
-(`gui/tests/helpers/ca.ts`), ce qui lève l'obstacle qui les tenait dehors : il
-n'y a plus besoin de données réelles.
+Ils couvrent les vingt règles de cohérence, chacune éprouvée deux fois, sur un
+cas qui doit la lever et sur un cas qui ne doit pas ; la validation des noms de
+dossier, où se joue la traversée de chemin ; le rendu de la configuration pour
+les douze modèles ; et les invariants des catalogues que le typage ne peut pas
+exprimer, dont la concordance des marqueurs `{nom}` entre le français et
+l'anglais.
 
-**Remède.** Verser les vérifications du moteur en tests unitaires, dans le même
-répertoire, et les brancher au même `npm test`.
+Pour que ces tests soient possibles, `blankRequest` a quitté l'écran de création
+pour `shared/templates.ts`. C'est la forme que le processus principal valide :
+elle n'avait rien à faire dans un composant React.
 
-### 11. Aucune mise à jour automatique
+### La vérification des versions existe, et elle est éteinte
 
-Déjà dans [Dette et risques](dette.md). À signaler à nouveau ici pour une
-raison précise : la version publiée en v1.0.0 est antérieure à la correction
-d'OpenSSL, donc **elle ne sait pas produire de demande**. Republier ne suffit
-pas si personne n'apprend qu'il faut retélécharger.
+**Pourquoi c'était nécessaire.** La première version publiée ne savait pas
+produire de demande. Republier ne sert à rien si personne n'apprend qu'il faut
+retélécharger.
 
-**Remède minimal.** Une vérification de version au lancement, qui lit la page
-des versions et affiche un bandeau. Sans installateur automatique, ce qui
-demanderait une signature de code.
+**Pourquoi c'est éteint par défaut.** L'application ne fait aucun appel réseau,
+et c'est écrit dans ses réglages et sa documentation. Beaucoup de postes qui
+manipulent des clés privées n'ont d'ailleurs pas de sortie. Une vérification
+silencieuse trahirait la promesse : elle se propose et attend qu'on l'accepte.
+
+**Ce qui part quand on l'accepte.** Une requête, au démarrage, vers la page des
+versions du projet. Aucun identifiant. Ce qui revient : un numéro de version.
+Rien n'est téléchargé ni installé : un bandeau propose un lien, et c'est un
+humain qui décide.
+
+Le test du réglage est fait dans le processus principal et non dans l'interface,
+pour que la promesse tienne même si quelqu'un appelle ce canal sans le savoir.
+L'adresse que le processus principal accepte d'ouvrir est limitée à celles du
+projet : elle vient d'une réponse reçue du réseau, donc elle n'est pas de
+confiance.
 
 ---
 
@@ -221,21 +217,28 @@ demanderait une signature de code.
 À l'attention de qui reprend le projet.
 
 **Le statut d'un dossier se déduit des fichiers présents**, jamais d'un état
-enregistré (`gui/electron/inventory.ts`). C'est pour cela que déposer un
-fichier à la main fonctionne, et qu'aucun état ne peut se désynchroniser du
-disque.
+enregistré (`gui/electron/inventory.ts`). C'est pour cela que déposer un fichier
+à la main fonctionne, et qu'aucun état ne peut se désynchroniser du disque.
+
+**Un dossier sans clé, sans demande et sans PFX n'est pas une entrée.** L'espace
+de travail est un dossier ordinaire, où l'on range aussi autre chose.
 
 **Le certificat feuille se reconnaît par comparaison de clé publique**, pas par
 son nom de fichier (`gui/electron/pfx.ts`). Une autorité qui renomme, ou qui
 renvoie plusieurs certificats dans le désordre, ne gêne pas l'assemblage.
 
 **Le modèle « site web public » ne demande pas `clientAuth`.** Ce n'est pas un
-oubli : les règles du CA/Browser Forum applicables en juin 2026 l'interdisent
-à côté de `serverAuth`. L'ajouter ferait rejeter la demande.
+oubli : les règles du CA/Browser Forum applicables en juin 2026 l'interdisent à
+côté de `serverAuth`. L'ajouter ferait rejeter la demande. Un test d'unité fige
+ce défaut de modèle.
 
-**Les commentaires du code sont sans accents, les textes affichés en ont.**
-Le catalogue de traduction est la seule source des seconds.
+**Les commentaires du code sont sans accents, les textes affichés en ont.** Le
+catalogue de traduction est la seule source des seconds, et le lint le fait
+respecter dans le processus principal.
 
 **La vérification d'OpenSSL empaqueté fait un aller-retour complet** et pas un
-simple `openssl version`. C'est la leçon du défaut le plus grave de la liste :
-`version` ne lit aucune configuration, et son succès ne prouvait rien.
+simple `openssl version`. C'est la leçon du défaut le plus grave rencontré sur
+ce projet : `version` ne lit aucune configuration, et son succès ne prouvait
+rien.
+
+**Il n'y a pas de suppression, seulement « Ranger ».** Voir plus haut.

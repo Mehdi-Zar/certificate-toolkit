@@ -40,23 +40,6 @@ mode sans interface. Aucun des deux n'est engagé.
 **Risque.** Quelqu'un automatise avec les scripts en croyant obtenir ce que
 produit l'interface.
 
-### Les vérifications du moteur ne sont pas dans le dépôt
-
-Une suite de bout en bout est désormais versionnée : 22 tests dans
-`gui/tests/`, du premier écran jusqu'au PFX ouvert avec son mot de passe.
-L'assemblage est couvert par une autorité de certification créée à la volée
-(`gui/tests/helpers/ca.ts`), ce qui lève la dépendance à des données réelles
-qui tenait ces tests dehors.
-
-Reste dehors la suite du moteur de génération, 99 vérifications, écrite avant
-que le dépôt n'ait de cadre de test.
-
-**Remède.** La verser en tests unitaires dans le même répertoire, sous le même
-`npm test`.
-
-**Risque.** Réduit mais pas nul : le moteur de génération n'est vérifié que par
-ce que le parcours de bout en bout traverse, soit une partie des combinaisons
-d'extensions qu'ouvre le mode avancé.
 
 ### Seul Windows est vérifié
 
@@ -67,17 +50,20 @@ qu'ils aient été essayés.
 **Remède.** Construire sur chaque plateforme et vérifier l'autonomie de la
 copie d'OpenSSL comme sous Windows.
 
-### Aucune intégration continue
+### La couverture s'arrête au mode avancé
 
-Rien ne vérifie automatiquement que le code compile, que les tests passent ou
-que la documentation reste juste.
+100 tests couvrent le parcours complet, les règles de cohérence et les
+catalogues. Ce qui reste peu couvert, ce sont les combinaisons rares du mode
+avancé : sept types de SAN, neuf bits de `keyUsage` et douze usages étendus font
+plus de combinaisons qu'on n'en écrira jamais.
 
-C'est devenu plus coûteux qu'avant : la suite de bout en bout tourne en
-cinquante secondes et a trouvé dix défauts réels, mais elle n'est lancée que
-par qui y pense.
+**Remède partiel appliqué.** Chaque règle de cohérence est éprouvée deux fois,
+sur un cas qui doit la lever et sur un cas qui ne doit pas. Une règle qui ne se
+déclencherait jamais serait pire qu'absente.
 
-**Remède.** Un workflow qui lance le typage, les tests et le contrôle de
-documentation à chaque poussée. Voir [Améliorations](ameliorations.md).
+**Risque résiduel.** Une combinaison exotique peut produire une demande qu'une
+autorité refusera, sans qu'aucun test ne l'ait vue passer. Voir plus bas, « Le
+mode avancé peut produire une demande refusée ».
 
 ---
 
@@ -93,8 +79,13 @@ La version livrée est inscrite dans `NOTICE.txt` à côté des binaires.
 
 ### Aucune mise à jour automatique
 
-Une version corrigée demande à chacun de retélécharger. Sur quelques postes
-c'est acceptable ; au-delà, il faudra un mécanisme.
+Une version corrigée demande à chacun de retélécharger. La vérification des
+versions, si elle est activée dans les réglages, affiche un bandeau et un lien ;
+elle ne télécharge ni n'installe rien, ce qui demanderait une signature de code.
+
+Sur quelques postes c'est acceptable ; au-delà, il faudra un mécanisme, et la
+vérification est éteinte par défaut, donc personne ne sera prévenu sans l'avoir
+demandé.
 
 ### Un mot de passe a été exposé
 

@@ -73,6 +73,33 @@ Une fois les réglages enregistrés, ce sont eux qui font foi.
 Les scripts en ligne de commande lisent les mêmes variables, plus
 `PFX_PASSWORD` et `KEY_PASSWORD`. Voir [Scripts](cli.md).
 
+## Vérification des versions
+
+**Décochée par défaut, et rien ne part tant qu'elle l'est.**
+
+Cochée, l'application lit une fois au démarrage le numéro de la dernière version
+publiée. Si elle est plus récente que la vôtre, un bandeau vous propose un lien.
+
+Ce qui part : une requête, sans identifiant, sans cookie. Ce qui revient : un
+numéro de version. Rien n'est téléchargé ni installé, et l'application n'ouvrira
+dans votre navigateur que les pages du projet.
+
+À cocher si votre poste a un accès Internet et que vous voulez être prévenu
+d'une correction. À laisser décochée sinon : l'application fonctionne
+identiquement.
+
+## Journal
+
+Quand une commande échoue, la raison est écrite dans `journal.log`, dans le
+dossier applicatif. Le bouton **Ouvrir le journal** l'affiche, et son chemin
+complet est écrit à côté pour que vous puissiez le transmettre.
+
+Le fichier contient la commande lancée, son code de retour et son message
+d'erreur. Il ne contient **jamais** de clé privée, de certificat ni de mot de
+passe. Seuls les échecs y sont consignés : tant que tout va bien, il est vide.
+
+Il tourne à 1 Mo, et une seule génération précédente est conservée.
+
 ## Thème
 
 Système, clair ou sombre, en bas de la barre de gauche. Le choix est enregistré

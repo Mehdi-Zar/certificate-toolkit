@@ -5,7 +5,7 @@
  * enveloppee dans un Reply<T> : une exception ne traverse jamais le pont, le
  * renderer recoit un message d'erreur affichable.
  */
-import { BrowserWindow, clipboard, dialog, ipcMain, shell } from 'electron'
+import { app, BrowserWindow, clipboard, dialog, ipcMain, shell } from 'electron'
 import { copyFile, mkdir, readFile, rename } from 'node:fs/promises'
 import { basename, join, normalize } from 'node:path'
 import type {
@@ -18,6 +18,7 @@ import type {
   PfxResult,
   Reply,
   Settings,
+  UpdateInfo,
 } from '../shared/types.ts'
 import { translator, type Translate } from '../shared/i18n/index.ts'
 import { generateCsr, pathsFor, preview } from './csr.ts'
@@ -28,6 +29,7 @@ import { describeEntry, scanRoot } from './inventory.ts'
 import { Openssl } from './openssl.ts'
 import { listSignedFiles, makePfx } from './pfx.ts'
 import { log, logPath } from './log.ts'
+import { checkForUpdate } from './update.ts'
 import { watchRoot } from './watcher.ts'
 import { loadSettings, saveSettings } from './store.ts'
 
@@ -207,6 +209,22 @@ export function registerIpc(): void {
     return r.response === 0
   })
 
+  /**
+   * Ouvre un lien dans le navigateur du systeme.
+   *
+   * Volontairement restreint aux pages du projet. Exposer au renderer le
+   * pouvoir d'ouvrir n'importe quelle adresse ferait de l'application un
+   * lanceur d'URL : ce canal ne sert qu'au bandeau de mise a jour, dont
+   * l'adresse vient d'une reponse recue du reseau et n'est donc pas de
+   * confiance.
+   */
+  handle<boolean>('shell:openExternal', async (url: string) => {
+    const ok = /^https:\/\/github\.com\/Mehdi-Zar\/certificate-toolkit(\/|$)/.test(url)
+    if (!ok) throw new Error((await lang())('err.urlRefused', { url }))
+    await shell.openExternal(url)
+    return true
+  })
+
   handle<boolean>('shell:reveal', async (path: string) => {
     shell.showItemInFolder(path)
     return true
@@ -241,6 +259,17 @@ export function registerIpc(): void {
   })
 
   handle<string>('log:path', async () => logPath())
+
+  /**
+   * Verification des versions. Rien ne part tant que le reglage est a faux :
+   * le test est fait ici plutot que dans l'interface, pour que la promesse
+   * tienne meme si un jour quelqu'un appelle ce canal sans le savoir.
+   */
+  handle<UpdateInfo | null>('update:check', async () => {
+    const settings = await loadSettings()
+    if (!settings.checkUpdates) return null
+    return checkForUpdate(app.getVersion())
+  })
 
   /**
    * Range un dossier hors de la liste, sans rien detruire.

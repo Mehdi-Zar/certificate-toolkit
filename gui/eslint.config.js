@@ -71,8 +71,11 @@ export default tseslint.config(
           // cle privee etait ecrit ici, en dur et sans accents : il restait
           // donc en francais en session anglaise. Tout texte vu par un
           // utilisateur vient du catalogue.
+          // Le litteral est cherche n'importe ou sous le new Error, et pas
+          // seulement en argument direct : un message assemble par
+          // concatenation echappait a la regle.
           selector:
-            "NewExpression[callee.name='Error'] > :matches(Literal[value=/[ ]/], TemplateLiteral)",
+            "NewExpression[callee.name='Error'] :matches(Literal[value=/[ ]/], TemplateLiteral)",
           message:
             "Un message d'erreur affiche passe par le catalogue : new Error(t('err.xxx')).",
         },

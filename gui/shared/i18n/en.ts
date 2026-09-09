@@ -51,6 +51,9 @@ export const en: Record<MessageKey, string> = {
     'The working folder holds no request yet. Start by generating a CSR.',
   'list.noResultTitle': 'No match',
   'list.noResultDesc': 'No request matches this filter.',
+  'update.available': 'Version {latest} is available (you have {current}).',
+  'update.open': 'See the release',
+  'update.dismiss': 'Later',
   'list.sort': 'Sort',
   'list.sortStage': 'By stage',
   'list.sortRecent': 'Most recent',
@@ -600,6 +603,11 @@ export const en: Record<MessageKey, string> = {
   'settings.subjectDefaults': 'Subject defaults',
   'settings.subjectDefaultsHelp':
     'Prefilled into new requests. Each request stays editable on its own.',
+  'settings.updates': 'Version check',
+  'settings.updatesLabel': 'Check at startup whether a newer version exists',
+  'settings.updatesHint': 'Off by default. Nothing is contacted until you tick this box.',
+  'settings.updatesHelp':
+    'One request at startup, to the project releases page, to read a version number. No identifier is sent, nothing is downloaded or installed: if a newer version exists, a banner offers a link and you decide.',
   'settings.log': 'Log',
   'settings.logBody':
     'When a command fails, the reason is written here. The file never contains a private key, a certificate or a password: only the command that ran, its exit code and its error message.',
@@ -607,7 +615,7 @@ export const en: Record<MessageKey, string> = {
   'settings.logOpen': 'Open the log',
   'settings.privacy': 'Privacy',
   'settings.privacy1':
-    'Private keys, CSRs and PFX files stay in the working folder. No data leaves this machine, and the application makes no network request.',
+    'Private keys, CSRs and PFX files stay in the working folder. No data leaves this machine. The application makes no network request, unless you turn on the version check above, which then only reads a version number.',
   'settings.privacy2':
     'Passwords are never stored, here or in a session file. They live only for the duration of a PFX assembly, and reach openssl through its environment rather than its command line.',
 
@@ -672,6 +680,7 @@ export const en: Record<MessageKey, string> = {
     'None of the certificates provided matches the private key.\nThe authority may have signed a different CSR, or the key was regenerated since it was sent.',
   'err.emptyPassword':
     'Empty password. Tick "PFX without a password" if that is intended.',
+  'err.urlRefused': 'Address refused: {url}',
   'err.rsaBits': 'Invalid RSA key size: {bits} (2048, 3072 or 4096).',
 
   // -------------------------------------------------------------------------

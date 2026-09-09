@@ -319,6 +319,19 @@ export function SettingsPage() {
         </section>
 
         <section>
+          <SectionTitle>{t('settings.updates')}</SectionTitle>
+          <Card className="p-5">
+            <Checkbox
+              checked={draft.checkUpdates}
+              onChange={(v) => set('checkUpdates', v)}
+              label={t('settings.updatesLabel')}
+              hint={t('settings.updatesHint')}
+              help={t('settings.updatesHelp')}
+            />
+          </Card>
+        </section>
+
+        <section>
           <SectionTitle>{t('settings.log')}</SectionTitle>
           <Card className="flex flex-col gap-3 p-5">
             <p className="text-[13px] leading-relaxed text-muted">{t('settings.logBody')}</p>
