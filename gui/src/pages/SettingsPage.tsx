@@ -138,13 +138,13 @@ export function SettingsPage() {
           <Card className="flex flex-col gap-5 p-5">
             <Field
               label={t('settings.root')}
-              htmlFor="root"
+              htmlFor="rootdir"
               hint={t('settings.rootHint')}
               help={t('settings.rootHelp')}
             >
               <div className="flex gap-2">
                 <Input
-                  id="root"
+                  id="rootdir"
                   value={draft.rootDir}
                   onChange={(e) => set('rootDir', e.target.value)}
                   spellCheck={false}

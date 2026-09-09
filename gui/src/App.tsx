@@ -25,7 +25,13 @@ import { SettingsPage } from './pages/SettingsPage.tsx'
 
 export type Route =
   | { name: 'list'; filter?: ListFilter }
-  | { name: 'new' }
+  /**
+   * fresh distingue deux clics successifs sur "Creer une demande". Sans lui,
+   * la cle de rendu ne change pas, le composant garde son etat, et quelqu'un
+   * arrive sur l'ecran de confirmation d'une demande terminee ne peut plus en
+   * commencer une autre : le menu semble ne rien faire.
+   */
+  | { name: 'new'; fresh?: number }
   | { name: 'detail'; fqdn: string }
   | { name: 'settings' }
 
@@ -65,7 +71,11 @@ export default function App() {
   )
 }
 
-const routeKey = (r: Route): string => (r.name === 'detail' ? 'detail:' + r.fqdn : r.name)
+const routeKey = (r: Route): string => {
+  if (r.name === 'detail') return 'detail:' + r.fqdn
+  if (r.name === 'new') return 'new:' + (r.fresh ?? 0)
+  return r.name
+}
 
 // ---------------------------------------------------------------------------
 
@@ -115,7 +125,7 @@ function Sidebar({
           n={1}
           icon={<FilePlus2 className="size-4" />}
           active={route.name === 'new'}
-          onClick={() => navigate({ name: 'new' })}
+          onClick={() => navigate({ name: 'new', fresh: Date.now() })}
         >
           {t('nav.step1')}
         </Step>

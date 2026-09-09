@@ -128,12 +128,7 @@ export async function makePfx(
     }
   })
 
-  if (!leaf) {
-    throw new Error(
-      'Aucun certificat fourni ne correspond a la cle privee.\n' +
-        "La PKI a peut-etre signe une autre CSR, ou la cle a ete regeneree depuis l'envoi.",
-    )
-  }
+  if (!leaf) throw new Error(t('err.noMatchingCert'))
   checks.push({ level: 'ok', label: t('check.keyMatch') })
 
   // -------------------------------------------------------------------------
