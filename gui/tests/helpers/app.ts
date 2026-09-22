@@ -32,12 +32,20 @@ export interface LaunchOptions {
   checkUpdates?: boolean
   /** Valeurs par defaut du sujet, vides sauf indication contraire. */
   defaults?: Partial<Record<'country' | 'state' | 'locality' | 'org' | 'ou' | 'email', string>>
+  /**
+   * Dossier parent impose, au lieu d'un dossier temporaire. Sert aux captures
+   * de la documentation, ou le chemin affiche a l'ecran doit etre lisible et
+   * ne doit nommer personne.
+   */
+  base?: string
+  /** Espace de travail impose, meme raison que `base`. */
+  workspace?: string
 }
 
 export async function launchApp(opts: LaunchOptions = {}): Promise<Launched> {
-  const base = mkdtempSync(join(tmpdir(), 'certtk-e2e-'))
+  const base = opts.base ?? mkdtempSync(join(tmpdir(), 'certtk-e2e-'))
   const userData = join(base, 'userData')
-  const workspace = join(base, 'workspace')
+  const workspace = opts.workspace ?? join(base, 'workspace')
   mkdirSync(userData, { recursive: true })
   mkdirSync(workspace, { recursive: true })
 

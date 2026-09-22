@@ -25,6 +25,7 @@ sur l'OpenSSL du `PATH`.
 | `npm run bundle:openssl` | Prépare la copie embarquée d'OpenSSL |
 | `npm run pack` | Application non empaquetée dans `release/` |
 | `npm run dist` | Installateurs |
+| `npm run captures` | Refait les captures d'écran de la documentation |
 
 `pack` et `dist` lancent `bundle:openssl` puis `build` automatiquement.
 
@@ -120,6 +121,33 @@ peut pas versionner.
 qu'aucun paquet n'existe. Il est là parce que ce qui marche depuis les sources
 ne dit rien de ce qui est livré : le défaut le plus grave de ce projet ne se
 manifestait qu'une fois OpenSSL copié dans le paquet.
+
+## Captures d'écran
+
+`tests/captures/` n'est pas un test : c'est le parcours qui produit les images
+de `docs/images/`. Il rejoue la boucle complète et capture dix écrans.
+
+```bash
+npm run captures
+```
+
+Il ne tourne ni avec `npm test` ni en intégration continue, parce qu'il écrit
+hors de son dossier. Relancez-le quand l'interface change, et versionnez les
+images produites.
+
+Trois contraintes expliquent sa forme :
+
+**Rien de réel n'apparaît à l'écran.** Le domaine, l'organisation et le mot de
+passe sont inventés, et la signature vient de l'autorité jetable des tests. Une
+capture prise à la main sur un poste de travail montrerait des certificats
+réels, et le compte Windows de celui qui l'a prise.
+
+**L'espace de travail est imposé** à `C:\Demo\Certificats`, et non tiré dans
+un dossier temporaire : son chemin se lit sur presque toutes les captures.
+`CAPTURES_DIR` le déplace. Le dossier est refusé s'il n'est pas vide, et
+supprimé à la fin, y compris après un échec.
+
+**Le thème clair est forcé**, sinon l'image dépendrait du réglage du poste.
 
 ## Ajouter un modèle
 

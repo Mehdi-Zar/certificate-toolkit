@@ -43,3 +43,8 @@ Une fonctionnalité non vérifiée n'y figure pas, ou est signalée comme telle.
 
 Les chiffres cités viennent du code. S'ils divergent, c'est le code qui a
 raison et la page qui est en retard : signalez-le.
+
+Les captures de `images/` ne sont pas prises à la main : `npm run captures`
+rejoue le parcours complet et les régénère toutes. Ce qu'elles montrent est
+inventé de bout en bout, y compris l'autorité qui signe. Rien d'un poste réel
+n'y figure, et rien ne doit y être ajouté à la main.

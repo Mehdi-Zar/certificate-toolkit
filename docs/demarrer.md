@@ -29,6 +29,8 @@ tickets. Demandez-la à votre équipe sécurité si vous ne la connaissez pas.
 Au premier lancement, l'assistant s'ouvre. Son deuxième écran vous demande où
 travailler.
 
+![Deuxième écran de l'assistant : l'espace de travail retenu, ce que chaque demande y recevra, et l'avertissement sur les dossiers synchronisés](images/assistant-dossier.png)
+
 Choisissez un dossier **qui n'est pas synchronisé**. Ni OneDrive, ni Dropbox,
 ni un lecteur réseau. Votre clé privée y sera écrite, et une clé privée qui
 part dans un cloud est une clé privée compromise.
@@ -46,6 +48,8 @@ Cliquez sur **Nouvelle demande**.
 L'application demande d'abord à quoi servira le certificat. Choisissez en
 français, pas en jargon :
 
+![Le choix du modèle : une carte par usage, décrite en français](images/modeles.png)
+
 - un site accessible depuis Internet : **Site web public** ;
 - un service sur le réseau interne : **Serveur interne** ;
 - se connecter avec une carte à puce : **Ouverture de session par carte à puce** ;
@@ -57,6 +61,8 @@ réglages techniques ; vous n'avez pas à les connaître.
 ### Remplir le formulaire
 
 Le mode **Simple** ne montre que l'essentiel :
+
+![Le formulaire rempli pour www.exemple.fr, et à droite la configuration qui sera passée à OpenSSL](images/formulaire.png)
 
 | Champ | Ce qu'on attend |
 |---|---|
@@ -83,6 +89,8 @@ L'application écrit deux fichiers dans votre espace de travail :
 - `<nom>.key.pem`, votre clé privée. **Elle ne doit jamais quitter ce poste.**
 - `<nom>.csr`, la demande. Elle ne contient rien de secret.
 
+![L'écran de confirmation : la CSR à copier, et le chemin de chaque fichier écrit](images/demande-prete.png)
+
 ## Étape 3 : envoyer la demande
 
 Cliquez sur **Copier la CSR** et collez le contenu dans le portail de votre
@@ -94,6 +102,8 @@ Puis attendez. Selon les organisations, la signature prend de quelques minutes
 
 Dans la liste, votre demande porte l'étiquette **En attente PKI**.
 
+![Le tableau de bord : une ligne par demande, avec son étape et son modèle](images/tableau-de-bord.png)
+
 ## Étape 4 : déposer la réponse
 
 Quand l'autorité répond, elle vous envoie un ou plusieurs fichiers. Leur
@@ -102,6 +112,8 @@ n'avez pas à savoir lequel est lequel.
 
 Ouvrez votre demande dans la liste, puis glissez les fichiers reçus sur
 l'étape 2. L'étiquette passe à **À assembler**.
+
+![L'étape 2 en attente : une zone où glisser les fichiers renvoyés par l'autorité](images/depot.png)
 
 ## Étape 5 : assembler le certificat
 
@@ -116,6 +128,8 @@ restée sur votre poste depuis l'étape 2. L'assemblage réunit les deux.
 Dans l'étape 3, choisissez un mot de passe, confirmez-le, et cliquez sur
 **Assembler le PFX**.
 
+![Les fichiers de l'autorité reconnus à l'étape 2, et le mot de passe saisi à l'étape 3](images/assemblage.png)
+
 Ce mot de passe protège la clé privée dans le fichier produit. Transmettez-le
 par un canal différent de celui du fichier.
 
@@ -123,10 +137,14 @@ L'application vérifie au passage que le certificat correspond bien à votre cl�
 reconstruit la chaîne jusqu'à l'autorité racine, et contrôle les dates et les
 noms. Les résultats s'affichent sous forme de liste.
 
+![La chaîne reconstruite du certificat jusqu'à la racine, puis la liste des contrôles passés](images/controles.png)
+
 ## Étape 6 : récupérer le bon fichier
 
 Une table apparaît : **Quel fichier pour quel serveur**. Prenez la ligne qui
 correspond au vôtre.
+
+![La table des formats produits, chacun avec le serveur qui l'attend et son chemin](images/formats.png)
 
 | Votre serveur | Le fichier |
 |---|---|

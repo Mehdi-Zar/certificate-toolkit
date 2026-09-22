@@ -5,6 +5,8 @@ différemment selon le serveur qui doit le lire.
 
 Prenez la ligne qui correspond au vôtre, ignorez les autres.
 
+![La table des formats telle que l'application l'affiche après un assemblage](images/formats.png)
+
 ## Quel fichier pour quel serveur
 
 | Votre serveur | Ce qu'il vous faut |

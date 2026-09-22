@@ -6,6 +6,8 @@ enregistré : ni mot de passe de PFX, ni phrase secrète de clé.
 Le fichier se trouve dans `%APPDATA%\Certificate Toolkit\settings.json`. Les
 versions portable et installée en ont chacune un.
 
+![L'écran des réglages : racine de travail, binaire OpenSSL détecté, algorithmes disponibles](images/reglages.png)
+
 ## Emplacements
 
 **Racine de travail**

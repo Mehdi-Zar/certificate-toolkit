@@ -30,6 +30,11 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
 ### Ajouté
 
+- **La documentation montre l'application.** Dix captures d'écran illustrent le
+  parcours, des modèles jusqu'aux formats produits. Elles sont produites par
+  `npm run captures`, qui rejoue la boucle complète avec un domaine, une
+  organisation et une autorité inventés : rien d'un poste réel n'y figure, et
+  elles se refont d'une commande quand l'interface change.
 - **L'espace de travail est surveillé.** La réponse de l'autorité déposée depuis
   l'explorateur apparaît sans qu'il faille quitter l'écran et y revenir. Deux
   filets : une veille sur le dossier, et le retour du focus sur la fenêtre.

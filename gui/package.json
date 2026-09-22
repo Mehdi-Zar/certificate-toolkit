@@ -15,8 +15,9 @@
     "dist": "npm run bundle:openssl && npm run build && electron-builder",
     "typecheck": "tsc --noEmit",
     "bundle:openssl": "node scripts/bundle-openssl.mjs",
-    "test": "npm run lint && vite build && playwright test",
-    "test:e2e": "playwright test",
+    "test": "npm run lint && vite build && playwright test --project=unite --project=app",
+    "test:e2e": "playwright test --project=unite --project=app",
+    "captures": "playwright test --project=captures",
     "lint": "eslint . && tsc --noEmit && node ../scripts/check-docs.mjs"
   },
   "dependencies": {

@@ -5,6 +5,8 @@ correct. Vous choisissez l'usage, l'outil remplit le reste.
 
 Tout reste modifiable ensuite en mode avancé.
 
+![Les modèles présentés à la création d'une demande, un par usage](images/modeles.png)
+
 ## Comment choisir
 
 | Votre situation | Le modèle |

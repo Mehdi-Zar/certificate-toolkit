@@ -30,7 +30,15 @@ export default defineConfig({
     {
       name: 'app',
       testDir: './tests',
-      testIgnore: '**/unite/**',
+      testIgnore: ['**/unite/**', '**/captures/**'],
+      fullyParallel: false,
+      workers: 1,
+    },
+    // Les captures ne sont pas un test : elles ecrivent dans docs/images. Elles
+    // ont leur projet pour etre lancees seules, jamais par npm test.
+    {
+      name: 'captures',
+      testDir: './tests/captures',
       fullyParallel: false,
       workers: 1,
     },
