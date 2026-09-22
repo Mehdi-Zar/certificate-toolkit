@@ -2,6 +2,11 @@
 
 Obtenir un certificat X.509 sans connaître X.509.
 
+![Création d'une demande : à gauche le formulaire en français, à droite la configuration exacte passée à OpenSSL](docs/images/formulaire.png)
+
+*Vous décrivez l'usage en français. L'outil écrit le X.509, et montre ce qu'il
+envoie à OpenSSL.*
+
 L'outil couvre le parcours complet : créer la demande, suivre l'attente pendant
 que l'autorité signe, puis assembler le certificat final dans le format attendu
 par votre serveur.
@@ -32,6 +37,11 @@ puis explique le parcours. Suivez-le.
 
 Si Windows affiche « Windows a protégé votre PC », voyez
 [Installer l'application](docs/installer.md).
+
+Quand l'autorité a signé, l'assemblage réunit son certificat et votre clé
+privée, reconstruit la chaîne, et vérifie que le tout tient ensemble :
+
+![Après l'assemblage : la chaîne reconstruite jusqu'à la racine, puis la liste des contrôles passés](docs/images/controles.png)
 
 ## Où aller ensuite
 
